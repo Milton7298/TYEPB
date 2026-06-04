@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>桃園市環保局非法棄置智慧圍籬系統 - 報表管理</title>
+    <title>桃園市非法棄置智慧圍籬系統 - 報表管理</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -26,7 +26,7 @@
 
 <div class="header-section">
     <div class="container">
-        <h2 class="m-0"><i class="fas fa-chart-line me-2"></i>桃園市環保局非法棄置智慧圍籬系統</h2>
+        <h2 class="m-0"><i class="fas fa-chart-line me-2"></i>桃園市非法棄置智慧圍籬系統</h2>
         <p class="m-0 text-white-50">統計報表與數據分析中心</p>
     </div>
 </div>
@@ -39,6 +39,7 @@
     </ul>
 
     <div class="tab-content" id="reportTabContent">
+        
         <div class="tab-pane fade show active" id="content-recog">
             <div class="card p-4">
                 <div class="row g-3 align-items-end">
@@ -124,24 +125,50 @@
     </div>
 </div>
 
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="fas fa-list-alt me-2"></i>上傳明細清單</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table table-striped mb-0 table-sm">
+                    <thead class="table-light sticky-top">
+                        <tr><th>時間</th><th>車牌</th><th>狀態</th><th>訊息</th></tr>
+                    </thead>
+                    <tbody id="detailModalBody"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button></div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
         const yyyyMm = today.toISOString().slice(0, 7);
         const yyyyMmDd = today.toISOString().slice(0, 10);
-        document.getElementById('recogMonth').value = yyyyMm; document.getElementById('rankMonth').value = yyyyMm;
-        document.getElementById('uploadStart').value = yyyyMmDd; document.getElementById('uploadEnd').value = yyyyMmDd;
-        renderRecogTable(); renderUploadTable(); renderRankTable();
+        document.getElementById('recogMonth').value = yyyyMm; 
+        document.getElementById('rankMonth').value = yyyyMm;
+        document.getElementById('uploadStart').value = "2026-06-03"; 
+        document.getElementById('uploadEnd').value = "2026-06-06";
+        
+        renderRecogTable(); 
+        renderUploadTable(); 
+        renderRankTable();
     });
 
+    // 渲染辨識統計表 (更新為 2026-06-03 後續四天)
     function renderRecogTable() {
         const tbody = document.getElementById('recogTableBody'); tbody.innerHTML = '';
         const mockData = [
-            { date: "2023-11-27", loc: "台61北向入口(新屋區)", total: 150, success: 145, fail: 5 },
-            { date: "2023-11-27", loc: "台61南向入口(觀音區)", total: 120, success: 110, fail: 10 },
-            { date: "2023-11-26", loc: "台61北向入口(新屋區)", total: 140, success: 138, fail: 2 },
-            { date: "2023-11-26", loc: "台61北向入口(大園區)", total: 90, success: 80, fail: 10 },
+            { date: "2026-06-06", loc: "台61北向入口(大園區)", total: 150, success: 145, fail: 5 },
+            { date: "2026-06-05", loc: "台61南向入口(觀音區)", total: 120, success: 110, fail: 10 },
+            { date: "2026-06-04", loc: "台61北向入口(新屋區)", total: 140, success: 138, fail: 2 },
+            { date: "2026-06-03", loc: "台61北向入口(大園區)", total: 90, success: 80, fail: 10 },
         ];
         mockData.forEach(item => {
             const rate = Math.round((item.success / item.total) * 100);
@@ -150,16 +177,27 @@
         });
     }
 
+    // 渲染上傳統計表 (更新為 2026-06-03 後續四天)
     function renderUploadTable() {
         const tbody = document.getElementById('uploadTableBody'); tbody.innerHTML = '';
-        const mockUploadStats = [{ date: "2023-11-27", status: "success", count: 255 }, { date: "2023-11-27", status: "fail", count: 15 }];
+        const mockUploadStats = [
+            { date: "2026-06-06", status: "success", count: 255 }, 
+            { date: "2026-06-05", status: "fail", count: 15 },
+            { date: "2026-06-04", status: "success", count: 230 },
+            { date: "2026-06-03", status: "success", count: 180 }
+        ];
+        
+        const filterStatus = document.getElementById('uploadStatus').value;
+
         mockUploadStats.forEach(item => {
+            if (filterStatus !== 'all' && item.status !== filterStatus) return;
             const badgeClass = item.status === 'success' ? 'bg-success' : 'bg-danger';
             const label = item.status === 'success' ? '上傳成功' : '上傳失敗';
-            tbody.innerHTML += `<tr><td>${item.date}</td><td><span class="badge ${badgeClass}">${label}</span></td><td><span class="clickable-number">${item.count}</span></td><td><button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download"></i></button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${item.date}</td><td><span class="badge ${badgeClass}">${label}</span></td><td><span class="clickable-number" onclick="openDetailModal('${item.date}', '${item.status}')">${item.count}</span></td><td><button class="btn btn-sm btn-outline-secondary"><i class="fas fa-download"></i></button></td></tr>`;
         });
     }
 
+    // 渲染排行榜 (更新點位名稱)
     function renderRankTable() {
         const tbody = document.getElementById('rankTableBody'); tbody.innerHTML = '';
         const mockRank = [
@@ -173,6 +211,24 @@
             let icon = rank === 1 ? '<i class="fas fa-trophy text-warning me-1"></i>' : '';
             tbody.innerHTML += `<tr><td class="text-center"><span class="rank-badge ${rankClass}">${rank}</span></td><td class="fw-bold font-monospace text-primary">${icon}${item.plate}</td><td>${item.type}</td><td class="text-center fw-bold fs-5">${item.count}</td><td class="text-muted small">${item.lastLoc}</td></tr>`;
         });
+    }
+
+    // 開啟明細 Modal
+    function openDetailModal(date, status) {
+        const modalBody = document.getElementById('detailModalBody');
+        modalBody.innerHTML = '';
+        const title = status === 'success' ? '上傳成功' : '上傳失敗';
+        
+        let rows = '';
+        for(let i=1; i<=10; i++) {
+            const time = `${date} 10:0${i}:00`;
+            const plate = `ABC-${1000+i}`;
+            const msg = status === 'success' ? '200 OK' : '500 Server Error';
+            const color = status === 'success' ? 'text-success' : 'text-danger';
+            rows += `<tr><td>${time}</td><td class="font-monospace fw-bold">${plate}</td><td class="${color}">${title}</td><td class="small text-muted">${msg}</td></tr>`;
+        }
+        modalBody.innerHTML = rows;
+        new bootstrap.Modal(document.getElementById('detailModal')).show();
     }
 </script>
 </body>
