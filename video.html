@@ -40,6 +40,15 @@
             justify-content: center;
         }
 
+        /* 影片本體 */
+        #liveStreamVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            pointer-events: none; /* 避免使用者點擊暫停影片 */
+        }
+
         .live-badge {
             position: absolute;
             top: 20px;
@@ -58,7 +67,7 @@
         .loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.9);
             color: white;
             display: flex;
             flex-direction: column;
@@ -70,6 +79,51 @@
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
+        /* --- CCTV 監視器特效疊層 --- */
+        /* CRT 橫向雜訊濾鏡 */
+        .cctv-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1),
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 畫面垂直掃描線動畫 */
+        .scanline {
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.15), transparent);
+            position: absolute;
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* 左下角監視器時間戳記 */
+        .cctv-timestamp {
+            position: absolute;
+            bottom: 20px;
+            left: 25px;
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            z-index: 3;
+        }
+
+        @keyframes scan {
+            0% { top: -100px; }
+            100% { top: 100%; }
+        }
+
         /* --- 行動版 RWD 設定 --- */
         @media (max-width: 768px) {
             body { height: auto; min-height: 100vh; overflow-y: auto; }
@@ -80,6 +134,7 @@
             }
             .content-area { width: 100%; overflow: visible; padding: 15px; order: 1; }
             .video-player-wrapper { border-radius: 4px; }
+            .cctv-timestamp { font-size: 0.9rem; bottom: 10px; left: 10px; }
         }
     </style>
 </head>
@@ -132,4 +187,124 @@
             </button>
 
             <div class="camera-group-title">蘆竹區國道一號南崁交流道</div>
-            <button class="list-group-item list-group-item-action" onclick="loadCamera('蘆竹區
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('蘆竹區-南崁-CAM01', 'CAM-LZ-01', this)">
+                <i class="fas fa-video me-2 text-success"></i>CAM-LZ-01 (車牌)
+            </button>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <div class="container-fluid p-0" style="max-width: 1200px; margin: 0 auto;">
+            
+            <div class="mb-3">
+                <h5 class="fw-bold m-0 text-dark" id="currentCamTitle"><i class="fas fa-camera me-2"></i>大園區-大園-CAM01</h5>
+                <small class="text-muted">設備編號: <span id="currentCamID">CAM-DY-01</span></small>
+            </div>
+
+            <div class="video-player-wrapper">
+                <div class="live-badge"><i class="fas fa-circle me-1"></i>LIVE</div>
+                
+                <div class="loading-overlay" id="loadingOverlay" style="opacity: 0; pointer-events: none;">
+                    <i class="fas fa-spinner fa-spin fa-3x mb-3 text-primary"></i>
+                    <h5>正在連接影像串流...</h5>
+                    <small class="text-white-50">RTSP/HLS Protocol</small>
+                </div>
+
+                <video id="liveStreamVideo" autoplay loop muted playsinline>
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-highway-traffic-in-a-modern-city-4054-large.mp4" type="video/mp4">
+                    您的瀏覽器不支援 HTML5 影片。
+                </video>
+
+                <div class="cctv-overlay"></div>
+                <div class="scanline"></div>
+                <div class="cctv-timestamp" id="cctvTime">Loading...</div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body bg-white rounded">
+                            <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2 text-primary"></i>串流技術資訊</h6>
+                            <div class="row text-muted small">
+                                <div class="col-sm-3 mb-2"><strong>影像解析度：</strong> 1920 x 1080 (1080p)</div>
+                                <div class="col-sm-3 mb-2"><strong>影格率 (FPS)：</strong> 30 fps</div>
+                                <div class="col-sm-3 mb-2"><strong>傳輸協定：</strong> HLS (HTTP Live Streaming)</div>
+                                <div class="col-sm-3 mb-2"><strong>網路延遲：</strong> <span class="text-success">穩定 (18ms)</span></div>
+                                <div class="col-sm-3 mb-2"><strong>視訊編碼：</strong> H.264 / MPEG-4 AVC</div>
+                                <div class="col-sm-3 mb-2"><strong>音訊通道：</strong> 已靜音 / 無收音</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 格式化數字補零
+    function pad(num) { return num.toString().padStart(2, '0'); }
+
+    // 系統時間與監視器時間戳記同步更新
+    setInterval(() => {
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        
+        // 更新右上角系統時間
+        document.getElementById('sysTime').innerText = `${dateStr} ${timeStr}`;
+        // 更新畫面左下角監視器時間 (模擬 OSD)
+        const camId = document.getElementById('currentCamID').innerText;
+        document.getElementById('cctvTime').innerText = `${camId}  ${dateStr} ${timeStr}`;
+    }, 1000);
+
+    // 模擬切換攝影機時的載入效果
+    function loadCamera(name, id, element) {
+        // 更新 UI 標題
+        document.getElementById('currentCamTitle').innerHTML = `<i class="fas fa-camera me-2"></i>${name}`;
+        document.getElementById('currentCamID').innerText = id;
+        
+        // 更新左側選單狀態
+        document.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+
+        // 觸發載入遮罩動畫
+        const overlay = document.getElementById('loadingOverlay');
+        const videoArea = document.getElementById('liveStreamVideo');
+        
+        overlay.style.opacity = '1';
+        
+        // 如果是標記為離線的攝影機
+        if (name.includes('離線')) {
+            setTimeout(() => {
+                overlay.innerHTML = `
+                    <i class="fas fa-video-slash fa-3x mb-3 text-danger"></i>
+                    <h5 class="text-danger">設備已離線</h5>
+                    <small class="text-white-50">無法取得 RTSP 串流，請檢查設備電源或網路</small>
+                `;
+                videoArea.style.opacity = '0'; // 隱藏背後影片
+            }, 800);
+            return;
+        }
+
+        // 正常攝影機切換 (重置遮罩內容與影像顯示)
+        overlay.innerHTML = `
+            <i class="fas fa-spinner fa-spin fa-3x mb-3 text-primary"></i>
+            <h5>正在連接影像串流...</h5>
+            <small class="text-white-50">RTSP/HLS Protocol</small>
+        `;
+        videoArea.style.opacity = '1';
+        videoArea.currentTime = 0; // 重置影片時間，製造切換的感覺
+        videoArea.play();
+        
+        // 模擬網路延遲後恢復播放
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+        }, 1200);
+    }
+</script>
+
+</body>
+</html>
