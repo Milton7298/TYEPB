@@ -23,8 +23,15 @@
 
 <div class="header-section">
     <div class="container">
-        <h2 class="m-0"><i class="fas fa-car-side me-2"></i>桃園市環保局非法棄置智慧圍籬系統</h2>
-        <p class="m-0 text-white-50">車牌辨識紀錄查詢與人工校正作業</p>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="m-0"><i class="fas fa-car-side me-2"></i>桃園市環保局非法棄置智慧圍籬系統</h2>
+                <p class="m-0 text-white-50">車牌辨識紀錄查詢與人工校正作業</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-warning text-dark"><i class="fas fa-image me-1"></i>KER-5379 實測影像整合版</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -49,8 +56,9 @@
                         <label class="form-label fw-bold">點位/設備</label>
                         <select class="form-select" id="qLocation">
                             <option value="">所有地點</option>
-                            <option value="大園區">大園區 (LOCA_..._0001)</option>
+                            <option value="新屋區">新屋區 (LOCA_..._0001)</option>
                             <option value="觀音區">觀音區 (LOCA_..._0002)</option>
+                            <option value="大園區">大園區 (LOCA_..._0003)</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -134,7 +142,7 @@
 
     let lprData = [
         { 
-            id: 101, time: "2023-11-27 10:05:00", loc: "大園區", siteId: "LOCA_68000_2026_0001", plate: "KER-5379", active: true, status: 1,
+            id: 101, time: "2023-11-27 10:05:00", loc: "新屋區", siteId: "LOCA_68000_2026_0001", plate: "KER-5379", active: true, status: 1,
             frontImg: "前截圖.jpg", bedImg: "車身照片.jpg", rearImg: "後截圖.jpg" 
         },
         { 
@@ -142,7 +150,7 @@
             frontImg: createMockImage("XYZ-5678", "車頭影像", "#333"), bedImg: createMockImage("XYZ-5678", "車斗影像", "#333"), rearImg: createMockImage("XYZ-5678", "車尾影像", "#333")
         },
         { 
-            id: 103, time: "2023-11-27 10:20:00", loc: "蘆竹區", siteId: "LOCA_68000_2026_0003", plate: "無法辨識", active: true, status: 0, 
+            id: 103, time: "2023-11-27 10:20:00", loc: "大園區", siteId: "LOCA_68000_2026_0003", plate: "無法辨識", active: true, status: 0, 
             frontImg: createMockImage("無法辨識", "車頭過曝", "#dc3545"), bedImg: createMockImage("UNKNOWN", "車斗無特徵", "#dc3545"), rearImg: createMockImage("無法辨識", "無車尾牌", "#dc3545")
         }
     ];
@@ -157,7 +165,17 @@
 
     function renderQueryTable() {
         const tbody = document.getElementById('queryTableBody'); tbody.innerHTML = '';
-        lprData.forEach(item => {
+        
+        const locFilter = document.getElementById('qLocation').value;
+        const statusFilter = document.getElementById('qStatus').value;
+
+        const filtered = lprData.filter(item => {
+            const matchLoc = locFilter ? item.loc.includes(locFilter) : true;
+            const matchStatus = statusFilter ? (statusFilter === '1' ? item.active : !item.active) : true; 
+            return matchLoc && matchStatus;
+        });
+
+        filtered.forEach(item => {
             let plateBadge = item.plate === "無法辨識" ? `<span class="badge badge-recog-fail">無法辨識</span>` : `<span class="badge badge-recog-success">${item.plate}</span>`;
             const imgError = `onerror="this.parentNode.innerHTML='<span class=\\'text-danger small\\'>找不到圖檔</span>'"`;
             tbody.innerHTML += `

@@ -53,25 +53,36 @@
             </div>
         </div>
         <div class="list-group-scroll">
-            <div class="camera-group-title">LOCA_68000_2026_0001 (大園區)</div>
-            <button class="list-group-item list-group-item-action active" onclick="loadCamera('大園區台61線大園交流道 - 車頭', 'LOCA_68000_2026_0001_Front_01', this)">
+            <div class="camera-group-title">LOCA_68000_2026_0001 (新屋區)</div>
+            <button class="list-group-item list-group-item-action active" onclick="loadCamera('台61北向入口(新屋區) - 車頭', 'LOCA_68000_2026_0001_Front_01', this)">
                 <i class="fas fa-truck-front me-2 text-success"></i>Front_01 <small class="text-muted">(車頭)</small>
             </button>
-            <button class="list-group-item list-group-item-action" onclick="loadCamera('大園區台61線大園交流道 - 車斗', 'LOCA_68000_2026_0001_Bed_01', this)">
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61北向入口(新屋區) - 車斗', 'LOCA_68000_2026_0001_Bed_01', this)">
                 <i class="fas fa-box-open me-2 text-success"></i>Bed_01 <small class="text-muted">(車斗)</small>
             </button>
-            <button class="list-group-item list-group-item-action" onclick="loadCamera('大園區台61線大園交流道 - 車尾', 'LOCA_68000_2026_0001_Rear_01', this)">
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61北向入口(新屋區) - 車尾', 'LOCA_68000_2026_0001_Rear_01', this)">
                 <i class="fas fa-truck-moving me-2 text-secondary"></i>Rear_01 <small class="text-muted">(車尾/離線)</small>
             </button>
             
             <div class="camera-group-title">LOCA_68000_2026_0002 (觀音區)</div>
-            <button class="list-group-item list-group-item-action" onclick="loadCamera('觀音區台61線觀音交流道 - 車頭', 'LOCA_68000_2026_0002_Front_01', this)">
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61南向入口(觀音區) - 車頭', 'LOCA_68000_2026_0002_Front_01', this)">
                 <i class="fas fa-truck-front me-2 text-success"></i>Front_01 <small class="text-muted">(車頭)</small>
             </button>
-            <button class="list-group-item list-group-item-action" onclick="loadCamera('觀音區台61線觀音交流道 - 車斗', 'LOCA_68000_2026_0002_Bed_01', this)">
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61南向入口(觀音區) - 車斗', 'LOCA_68000_2026_0002_Bed_01', this)">
                 <i class="fas fa-box-open me-2 text-success"></i>Bed_01 <small class="text-muted">(車斗)</small>
             </button>
-            <button class="list-group-item list-group-item-action" onclick="loadCamera('觀音區台61線觀音交流道 - 車尾', 'LOCA_68000_2026_0002_Rear_01', this)">
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61南向入口(觀音區) - 車尾', 'LOCA_68000_2026_0002_Rear_01', this)">
+                <i class="fas fa-truck-moving me-2 text-success"></i>Rear_01 <small class="text-muted">(車尾)</small>
+            </button>
+
+            <div class="camera-group-title">LOCA_68000_2026_0003 (大園區)</div>
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61北向入口(大園區) - 車頭', 'LOCA_68000_2026_0003_Front_01', this)">
+                <i class="fas fa-truck-front me-2 text-success"></i>Front_01 <small class="text-muted">(車頭)</small>
+            </button>
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61北向入口(大園區) - 車斗', 'LOCA_68000_2026_0003_Bed_01', this)">
+                <i class="fas fa-box-open me-2 text-success"></i>Bed_01 <small class="text-muted">(車斗)</small>
+            </button>
+            <button class="list-group-item list-group-item-action" onclick="loadCamera('台61北向入口(大園區) - 車尾', 'LOCA_68000_2026_0003_Rear_01', this)">
                 <i class="fas fa-truck-moving me-2 text-success"></i>Rear_01 <small class="text-muted">(車尾)</small>
             </button>
         </div>
@@ -81,7 +92,7 @@
         <div class="container-fluid p-0" style="max-width: 1200px; margin: 0 auto;">
             
             <div class="mb-3">
-                <h5 class="fw-bold m-0 text-dark" id="currentCamTitle"><i class="fas fa-camera me-2"></i>大園區台61線大園交流道 - 車頭</h5>
+                <h5 class="fw-bold m-0 text-dark" id="currentCamTitle"><i class="fas fa-camera me-2"></i>台61北向入口(新屋區) - 車頭</h5>
                 <small class="text-muted">設備編號: <span class="font-monospace" id="currentCamID">LOCA_68000_2026_0001_Front_01</span></small>
             </div>
 
@@ -132,7 +143,7 @@
         
         overlay.style.opacity = '1';
         
-        if (name.includes('離線') || id.includes('Rear_01')) {
+        if (name.includes('離線') || id.includes('Rear_01') && name.includes('新屋區')) {
             setTimeout(() => {
                 overlay.innerHTML = `<i class="fas fa-video-slash fa-3x mb-3 text-danger"></i><h5 class="text-danger">設備已離線</h5>`;
                 videoElement.style.opacity = '0';

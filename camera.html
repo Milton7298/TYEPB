@@ -7,10 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* --- 核心風格 --- */
         body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; display: flex; flex-direction: column; }
         .header-section { background-color: #2c3e50; color: white; padding: 15px 0; flex-shrink: 0; }
-        
         .main-container { flex-grow: 1; display: flex; overflow: hidden; }
         .sidebar { width: 300px; background: white; border-right: 1px solid #dee2e6; display: flex; flex-direction: column; flex-shrink: 0; }
         .sidebar-header { padding: 15px; border-bottom: 1px solid #dee2e6; background-color: #f1f3f5; }
@@ -18,37 +16,20 @@
         .list-group-item { border-radius: 0; border-left: 0; border-right: 0; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
         .list-group-item:hover { background-color: #f8f9fa; }
         .list-group-item.active { background-color: #e9ecef; color: #2c3e50; border-color: #dee2e6; border-left-color: #0d6efd; font-weight: bold; }
-        
         .content-area { flex-grow: 1; padding: 20px; overflow-y: auto; background-color: #f8f9fa; }
-        
-        /* Tree CSS */
         .tree-container { position: relative; padding-left: 20px; }
         .tree-root { display: flex; align-items: center; margin-bottom: 20px; }
         .tree-branch { position: relative; margin-left: 40px; padding-left: 30px; border-left: 2px solid #adb5bd; }
         .tree-leaf { position: relative; margin-bottom: 15px; display: flex; align-items: center; }
         .tree-leaf::before { content: ''; position: absolute; left: -32px; top: 50%; width: 30px; height: 2px; background-color: #adb5bd; }
-        
         .card-root { border-left: 5px solid #2c3e50; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .card-leaf { width: 100%; border-left: 4px solid #198754; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .card-leaf:hover { transform: translateX(5px); }
         .card-leaf.disabled-cam { border-left-color: #6c757d; background-color: #f8f9fa; }
-
         .conn-ok { color: #198754; font-weight: bold; font-size: 0.9em; }
         .conn-err { color: #dc3545; font-weight: bold; font-size: 0.9em; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        @media (max-width: 768px) {
-            body { height: auto; min-height: 100vh; overflow-y: auto; }
-            .main-container { flex-direction: column; overflow: visible; }
-            .sidebar { width: 100%; height: auto; max-height: 250px; border-right: none; border-bottom: 5px solid #dee2e6; }
-            .content-area { width: 100%; padding: 10px; overflow: visible; }
-            .tree-branch { margin-left: 10px; padding-left: 15px; }
-            .tree-leaf::before { width: 15px; left: -17px; }
-            .card-leaf .row .col-md-4, .card-leaf .row .col-md-2, .card-leaf .row .col-md-3 {
-                width: 100%; margin-bottom: 5px; border-right: none !important; display: flex; justify-content: space-between; align-items: center;
-            }
-            .bg-light.rounded-circle { display: none; }
-        }
+        @media (max-width: 768px) { body { height: auto; min-height: 100vh; overflow-y: auto; } .main-container { flex-direction: column; overflow: visible; } .sidebar { width: 100%; height: auto; max-height: 250px; border-right: none; border-bottom: 5px solid #dee2e6; } .content-area { width: 100%; padding: 10px; overflow: visible; } .tree-branch { margin-left: 10px; padding-left: 15px; } .tree-leaf::before { width: 15px; left: -17px; } .card-leaf .row .col-md-4, .card-leaf .row .col-md-2, .card-leaf .row .col-md-3 { width: 100%; margin-bottom: 5px; border-right: none !important; display: flex; justify-content: space-between; align-items: center; } .bg-light.rounded-circle { display: none; } }
     </style>
 </head>
 <body>
@@ -232,12 +213,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 依據新規則建立的資料庫
     let monitorData = [
         {
             id: "LOCA_68000_2026_0001",
-            name: "大園區台61線大園交流道",
-            lat: 25.0645, lng: 121.1973, alarm: 30, active: true,
+            name: "台61北向入口(新屋區)",
+            lat: 24.9723, lng: 121.0145, alarm: 30, active: true,
             cameras: [
                 { id: "LOCA_68000_2026_0001_Front_01", online: true, active: true },
                 { id: "LOCA_68000_2026_0001_Bed_01", online: true, active: true },
@@ -246,7 +226,7 @@
         },
         {
             id: "LOCA_68000_2026_0002",
-            name: "觀音區台61線觀音交流道",
+            name: "台61南向入口(觀音區)",
             lat: 25.0334, lng: 121.0789, alarm: 20, active: true,
             cameras: [
                 { id: "LOCA_68000_2026_0002_Front_01", online: true, active: true },
@@ -256,8 +236,8 @@
         },
         {
             id: "LOCA_68000_2026_0003",
-            name: "蘆竹區國道一號南崁交流道",
-            lat: 25.0454, lng: 121.2876, alarm: 60, active: false,
+            name: "台61北向入口(大園區)",
+            lat: 25.0645, lng: 121.1973, alarm: 60, active: false,
             cameras: [
                 { id: "LOCA_68000_2026_0003_Front_01", online: false, active: false },
                 { id: "LOCA_68000_2026_0003_Bed_01", online: false, active: false },
