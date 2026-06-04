@@ -40,15 +40,6 @@
             justify-content: center;
         }
 
-        /* 影片本體 */
-        #liveStreamVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 0;
-            pointer-events: none; /* 避免使用者點擊暫停影片 */
-        }
-
         .live-badge {
             position: absolute;
             top: 20px;
@@ -80,7 +71,6 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         /* --- CCTV 監視器特效疊層 --- */
-        /* CRT 橫向雜訊濾鏡 */
         .cctv-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -92,10 +82,9 @@
                 transparent 2px
             );
             pointer-events: none;
-            z-index: 1;
+            z-index: 5;
         }
 
-        /* 畫面垂直掃描線動畫 */
         .scanline {
             width: 100%;
             height: 80px;
@@ -103,10 +92,9 @@
             position: absolute;
             animation: scan 4s linear infinite;
             pointer-events: none;
-            z-index: 2;
+            z-index: 6;
         }
 
-        /* 左下角監視器時間戳記 */
         .cctv-timestamp {
             position: absolute;
             bottom: 20px;
@@ -116,7 +104,7 @@
             font-size: 1.2rem;
             font-weight: bold;
             text-shadow: 2px 2px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            z-index: 3;
+            z-index: 7;
         }
 
         @keyframes scan {
@@ -155,6 +143,7 @@
 
 <div class="main-container">
     
+    <!-- 左側攝影機列表 -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="d-flex justify-content-between align-items-center mb-2 d-md-none">
@@ -193,33 +182,41 @@
         </div>
     </div>
 
+    <!-- 右側影像顯示區 -->
     <div class="content-area">
         <div class="container-fluid p-0" style="max-width: 1200px; margin: 0 auto;">
             
+            <!-- 標題列 -->
             <div class="mb-3">
                 <h5 class="fw-bold m-0 text-dark" id="currentCamTitle"><i class="fas fa-camera me-2"></i>大園區-大園-CAM01</h5>
                 <small class="text-muted">設備編號: <span id="currentCamID">CAM-DY-01</span></small>
             </div>
 
+            <!-- 播放器區塊 -->
             <div class="video-player-wrapper">
                 <div class="live-badge"><i class="fas fa-circle me-1"></i>LIVE</div>
                 
+                <!-- 載入中遮罩 -->
                 <div class="loading-overlay" id="loadingOverlay" style="opacity: 0; pointer-events: none;">
                     <i class="fas fa-spinner fa-spin fa-3x mb-3 text-primary"></i>
                     <h5>正在連接影像串流...</h5>
                     <small class="text-white-50">RTSP/HLS Protocol</small>
                 </div>
 
-                <video id="liveStreamVideo" autoplay loop muted playsinline>
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-highway-traffic-in-a-modern-city-4054-large.mp4" type="video/mp4">
+                <!-- 本機影片播放 (穩定的展示方案) -->
+                <!-- 請確保您的影片檔名為 demo_video.mp4，且與此 HTML 檔案位於同一個資料夾 -->
+                <video id="liveStreamVideo" autoplay loop muted playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transition: opacity 0.3s;">
+                    <source src="demo_video.mp4" type="video/mp4">
                     您的瀏覽器不支援 HTML5 影片。
                 </video>
 
+                <!-- CCTV 雜訊、掃描線與時間疊層 (覆蓋在影片上) -->
                 <div class="cctv-overlay"></div>
                 <div class="scanline"></div>
                 <div class="cctv-timestamp" id="cctvTime">Loading...</div>
             </div>
 
+            <!-- 設備技術資訊 -->
             <div class="row mt-4">
                 <div class="col-md-12">
                     <div class="card border-0 shadow-sm">
@@ -272,7 +269,7 @@
 
         // 觸發載入遮罩動畫
         const overlay = document.getElementById('loadingOverlay');
-        const videoArea = document.getElementById('liveStreamVideo');
+        const videoElement = document.getElementById('liveStreamVideo');
         
         overlay.style.opacity = '1';
         
@@ -284,25 +281,27 @@
                     <h5 class="text-danger">設備已離線</h5>
                     <small class="text-white-50">無法取得 RTSP 串流，請檢查設備電源或網路</small>
                 `;
-                videoArea.style.opacity = '0'; // 隱藏背後影片
+                videoElement.style.opacity = '0'; // 隱藏影片
             }, 800);
             return;
         }
 
-        // 正常攝影機切換 (重置遮罩內容與影像顯示)
+        // 正常攝影機切換 (重置遮罩內容)
         overlay.innerHTML = `
             <i class="fas fa-spinner fa-spin fa-3x mb-3 text-primary"></i>
             <h5>正在連接影像串流...</h5>
             <small class="text-white-50">RTSP/HLS Protocol</small>
         `;
-        videoArea.style.opacity = '1';
-        videoArea.currentTime = 0; // 重置影片時間，製造切換的感覺
-        videoArea.play();
         
-        // 模擬網路延遲後恢復播放
+        // 重置並重新播放本地影片
+        videoElement.style.opacity = '1';
+        videoElement.currentTime = 0;
+        videoElement.play();
+        
+        // 模擬網路延遲後移除遮罩
         setTimeout(() => {
             overlay.style.opacity = '0';
-        }, 1200);
+        }, 1500);
     }
 </script>
 
