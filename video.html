@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>桃園市環保局非法棄置智慧圍籬系統 - 即時影像監控</title>
+    <title>桃園市非法棄置智慧圍籬系統 - 即時影像監控</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -24,9 +24,9 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .cctv-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 5; }
         .scanline { width: 100%; height: 80px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.15), transparent); position: absolute; animation: scan 4s linear infinite; pointer-events: none; z-index: 6; }
-        .cctv-timestamp { position: absolute; bottom: 20px; left: 25px; color: rgba(255, 255, 255, 0.9); font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; font-weight: bold; text-shadow: 2px 2px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; z-index: 7; }
+        .cctv-timestamp { position: absolute; bottom: 20px; left: 25px; color: rgba(255, 255, 255, 0.9); font-family: 'Courier New', Courier, monospace; font-size: 1.2rem; font-weight: bold; text-shadow: 2px 2px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; z-index: 7; }
         @keyframes scan { 0% { top: -100px; } 100% { top: 100%; } }
-        @media (max-width: 768px) { body { height: auto; min-height: 100vh; overflow-y: auto; } .main-container { flex-direction: column; overflow: visible; } .sidebar { width: 100%; height: auto; max-height: 250px; border-right: none; border-bottom: 5px solid #dee2e6; order: 0; } .content-area { width: 100%; overflow: visible; padding: 15px; order: 1; } }
+        @media (max-width: 768px) { body { height: auto; min-height: 100vh; overflow-y: auto; } .main-container { flex-direction: column; overflow: visible; } .sidebar { width: 100%; height: auto; max-height: 250px; border-right: none; border-bottom: 5px solid #dee2e6; order: 0; } .content-area { width: 100%; overflow: visible; padding: 15px; order: 1; } .video-player-wrapper { border-radius: 4px; } .cctv-timestamp { font-size: 0.9rem; bottom: 10px; left: 10px; } }
     </style>
 </head>
 <body>
