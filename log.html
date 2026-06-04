@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桃園市環保局非法棄置智慧圍籬系統 - 日誌管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- 核心風格 (一致性維持) --- */
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; }
+        .header-section { background-color: #2c3e50; color: white; padding: 20px 0; margin-bottom: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
+        
+        /* Tab 樣式 */
+        .nav-tabs .nav-link { color: #495057; font-weight: bold; padding: 12px 20px; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-top: 3px solid #0d6efd; border-bottom-color: transparent; }
+        
+        /* 系統策略看板樣式 */
+        .policy-card { background: #e9ecef; border-left: 5px solid #0dcaf0; }
+        .policy-value { font-weight: bold; color: #0d6efd; }
+        
+        /* Log 類型標籤 */
+        .badge-log-login { background-color: #0d6efd; }
+        .badge-log-view { background-color: #6610f2; }
+        .badge-log-alert { background-color: #dc3545; }
+        .badge-log-api { background-color: #198754; }
+    </style>
+</head>
+<body>
+
+<div class="header-section">
+    <div class="container">
+        <h2 class="m-0"><i class="fas fa-history me-2"></i>桃園市環保局非法棄置智慧圍籬系統</h2>
+        <p class="m-0 text-white-50">系統稽核日誌與歷程管理</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+    <div class="card policy-card p-3 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="fw-bold mb-1"><i class="fas fa-server me-2"></i>系統日誌保存策略 (Retention Policy)</h5>
+                <small class="text-muted">系統將自動執行資料維護，確保資料庫效能與合規性。</small>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-inline-block text-start bg-white p-2 rounded shadow-sm border">
+                    <div class="small text-muted">保存期限設定</div>
+                    <div class="policy-value"><i class="fas fa-calendar-check me-1"></i>6 個月 (180 天)</div>
+                </div>
+                <div class="d-inline-block text-start bg-white p-2 rounded shadow-sm border ms-2">
+                    <div class="small text-muted">逾期處理機制</div>
+                    <div class="policy-value text-danger"><i class="fas fa-recycle me-1"></i>自動覆寫 (Auto-Overwrite)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">日誌時間區間</label>
+                <div class="input-group">
+                    <input type="date" class="form-control" id="dateStart">
+                    <span class="input-group-text">至</span>
+                    <input type="date" class="form-control" id="dateEnd">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">關鍵字搜尋</label>
+                <input type="text" class="form-control" id="keyword" placeholder="輸入使用者、IP、車號或API訊息...">
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-primary" onclick="renderCurrentTab()"><i class="fas fa-search me-1"></i> 搜尋日誌</button>
+                <button class="btn btn-outline-success ms-1" onclick="exportLog()"><i class="fas fa-file-export me-1"></i> 匯出報表</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-white p-0 border-bottom-0">
+            <ul class="nav nav-tabs card-header-tabs m-0" id="logTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="tab-login" data-bs-toggle="tab" data-bs-target="#content-login" onclick="currentType='login'">
+                        <i class="fas fa-user-clock me-1"></i> 用戶連線記錄
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="tab-view" data-bs-toggle="tab" data-bs-target="#content-view" onclick="currentType='view'">
+                        <i class="fas fa-video me-1"></i> 影像調閱記錄
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="tab-alert" data-bs-toggle="tab" data-bs-target="#content-alert" onclick="currentType='alert'">
+                        <i class="fas fa-bell me-1"></i> 告警發送紀錄
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="tab-api" data-bs-toggle="tab" data-bs-target="#content-api" onclick="currentType='api'">
+                        <i class="fas fa-cloud-upload-alt me-1"></i> API 上傳紀錄
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="tab-content" id="logTabContent">
+                
+                <div class="tab-pane fade show active" id="content-login">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="20%">發生時間</th>
+                                    <th width="15%">使用者帳號</th>
+                                    <th width="15%">來源 IP</th>
+                                    <th width="15%">操作類型</th>
+                                    <th width="20%">詳細資訊</th>
+                                    <th width="15%">狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-login">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="content-view">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="20%">調閱時間</th>
+                                    <th width="15%">操作人員</th>
+                                    <th width="20%">目標攝影機</th>
+                                    <th width="15%">調閱模式</th>
+                                    <th width="20%">調閱區間/檔案</th>
+                                    <th width="10%">結果</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-view"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="content-alert">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="20%">觸發時間</th>
+                                    <th width="15%">告警類型</th>
+                                    <th width="20%">觸發來源</th>
+                                    <th width="25%">通知對象</th>
+                                    <th width="20%">發送狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-alert"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="content-api">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="20%">上傳時間</th>
+                                    <th width="15%">案件編號</th>
+                                    <th width="15%">車牌號碼</th>
+                                    <th width="30%">API 回傳訊息</th>
+                                    <th width="20%">傳輸結果</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-api"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="card-footer bg-white small text-muted">
+            <i class="fas fa-info-circle me-1"></i> 系統每晚 03:00 自動執行逾期日誌清除作業 (保留最近 6 個月資料)。
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 當前選中的 Tab 類型
+    let currentType = 'login';
+
+    // 1. 模擬資料庫 (Mock Data)
+    const logs = {
+        login: [
+            { time: "2023-11-27 08:01:23", user: "admin", ip: "192.168.1.10", action: "系統登入", detail: "登入成功", status: "Success" },
+            { time: "2023-11-27 08:05:00", user: "user01", ip: "192.168.1.55", action: "系統登入", detail: "密碼錯誤", status: "Fail" },
+            { time: "2023-11-27 09:30:11", user: "admin", ip: "192.168.1.10", action: "參數修改", detail: "更新黑名單設定", status: "Success" },
+            { time: "2023-11-27 12:00:05", user: "user01", ip: "192.168.1.55", action: "系統登出", detail: "正常登出", status: "Success" },
+        ],
+        view: [
+            { time: "2023-11-27 09:10:00", user: "admin", cam: "大園區-大園-CAM01", mode: "即時影像", detail: "觀看 5 分鐘", result: "OK" },
+            { time: "2023-11-27 10:15:30", user: "user01", cam: "觀音區-觀音-CAM02", mode: "歷史回放", detail: "2023-11-26 14:00~14:10", result: "OK" },
+            { time: "2023-11-27 11:20:00", user: "admin", cam: "蘆竹區-南崁-CAM01", mode: "檔案下載", detail: "CCTV_20231127_1100.mp4", result: "OK" },
+        ],
+        alert: [
+            { time: "2023-11-27 10:05:22", type: "黑名單告警", source: "KER-5379", target: "稽查大隊群組, 王科長", status: "Sent (Email)" },
+            { time: "2023-11-27 09:30:00", type: "設備失聯", source: "CAM-GT-03", target: "維運廠商", status: "Sent (Email)" },
+            { time: "2023-11-26 23:15:11", type: "黑名單告警", source: "XYZ-8888", target: "稽查大隊群組", status: "Sent (Email)" },
+        ],
+        api: [
+            { time: "2023-11-27 10:06:00", id: "EVT-20231127-01", plate: "KER-5379", msg: "200 OK (Success)", result: "Success" },
+            { time: "2023-11-27 09:31:00", id: "EVT-20231127-02", plate: "ABC-1234", msg: "200 OK (Success)", result: "Success" },
+            { time: "2023-11-27 08:15:00", id: "EVT-20231127-03", plate: "UNKNOWN", msg: "500 Internal Error", result: "Fail" },
+        ]
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // 設定預設日期 (今天)
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dateStart').value = today;
+        document.getElementById('dateEnd').value = today;
+
+        // 初始渲染
+        renderCurrentTab();
+    });
+
+    // 通用渲染函數
+    function renderCurrentTab() {
+        const tbody = document.getElementById(`tbody-${currentType}`);
+        tbody.innerHTML = '';
+        const data = logs[currentType];
+        
+        // 簡單過濾關鍵字
+        const keyword = document.getElementById('keyword').value.toLowerCase();
+        const filtered = data.filter(row => {
+            return Object.values(row).some(val => 
+                String(val).toLowerCase().includes(keyword)
+            );
+        });
+
+        if (filtered.length === 0) {
+            let colSpan = 6;
+            if(currentType === 'api' || currentType === 'alert') colSpan = 5;
+            tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-muted">查無紀錄</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(item => {
+            let rowHtml = '';
+            
+            // 根據不同 Tab 產生不同 row
+            if (currentType === 'login') {
+                const statusBadge = item.status === 'Success' ? '<span class="badge bg-success">成功</span>' : '<span class="badge bg-danger">失敗</span>';
+                rowHtml = `
+                    <td>${item.time}</td>
+                    <td class="fw-bold">${item.user}</td>
+                    <td class="font-monospace small">${item.ip}</td>
+                    <td><span class="badge badge-log-login">${item.action}</span></td>
+                    <td>${item.detail}</td>
+                    <td>${statusBadge}</td>
+                `;
+            } else if (currentType === 'view') {
+                rowHtml = `
+                    <td>${item.time}</td>
+                    <td class="fw-bold">${item.user}</td>
+                    <td>${item.cam}</td>
+                    <td><span class="badge badge-log-view">${item.mode}</span></td>
+                    <td class="small text-muted">${item.detail}</td>
+                    <td><i class="fas fa-check text-success"></i> ${item.result}</td>
+                `;
+            } else if (currentType === 'alert') {
+                const badgeColor = item.type.includes('黑名單') ? 'bg-danger' : 'bg-warning text-dark';
+                rowHtml = `
+                    <td>${item.time}</td>
+                    <td><span class="badge ${badgeColor}">${item.type}</span></td>
+                    <td class="fw-bold">${item.source}</td>
+                    <td class="small">${item.target}</td>
+                    <td><span class="text-success"><i class="fas fa-paper-plane me-1"></i>${item.status}</span></td>
+                `;
+            } else if (currentType === 'api') {
+                const statusColor = item.result === 'Success' ? 'text-success' : 'text-danger';
+                const icon = item.result === 'Success' ? 'fa-check-circle' : 'fa-times-circle';
+                rowHtml = `
+                    <td>${item.time}</td>
+                    <td class="font-monospace small">${item.id}</td>
+                    <td class="fw-bold">${item.plate}</td>
+                    <td class="font-monospace small text-muted">${item.msg}</td>
+                    <td class="${statusColor} fw-bold"><i class="fas ${icon} me-1"></i>${item.result}</td>
+                `;
+            }
+
+            tbody.innerHTML += `<tr>${rowHtml}</tr>`;
+        });
+    }
+
+    // 匯出功能
+    function exportLog() {
+        const typeName = {
+            'login': '用戶連線紀錄',
+            'view': '影像調閱紀錄',
+            'alert': '告警發送紀錄',
+            'api': 'API上傳紀錄'
+        };
+        alert(`正在匯出 [${typeName[currentType]}] ...\n範圍：${document.getElementById('dateStart').value} ~ ${document.getElementById('dateEnd').value}\n格式：CSV`);
+    }
+
+</script>
+
+</body>
+</html>

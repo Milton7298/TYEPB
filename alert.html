@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桃園市環保局非法棄置智慧圍籬系統 - 系統告警管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- 核心風格 (一致性維持) --- */
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; }
+        .header-section { background-color: #2c3e50; color: white; padding: 20px 0; margin-bottom: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
+        
+        /* Tab 樣式 */
+        .nav-tabs .nav-link { color: #495057; font-weight: bold; padding: 12px 20px; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-top: 3px solid #0d6efd; border-bottom-color: transparent; }
+        
+        /* 標籤與圖示 */
+        .type-badge-group { background-color: #6f42c1; color: white; }
+        .type-badge-user { background-color: #0d6efd; color: white; }
+        
+        /* 表格樣式 */
+        .check-icon { color: #198754; }
+        .uncheck-icon { color: #e9ecef; }
+        
+        /* 群組 Email 列表樣式 */
+        .email-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
+        .email-list li { margin-bottom: 2px; }
+        .email-list i { color: #adb5bd; width: 15px; margin-right: 5px; }
+
+        /* 分頁樣式 */
+        .pagination .page-item.active .page-link { background-color: #2c3e50; border-color: #2c3e50; }
+        .pagination .page-link { color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+<div class="header-section">
+    <div class="container">
+        <h2 class="m-0"><i class="fas fa-bell me-2"></i>桃園市環保局非法棄置智慧圍籬系統</h2>
+        <p class="m-0 text-white-50">系統告警規則、關係人設定與紀錄查詢</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+    <ul class="nav nav-tabs mb-4" id="alertTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="tab-recipients" data-bs-toggle="tab" data-bs-target="#content-recipients">
+                <i class="fas fa-users-cog me-1"></i> 通報對象 (關係人) 設定
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="tab-rules" data-bs-toggle="tab" data-bs-target="#content-rules">
+                <i class="fas fa-sliders-h me-1"></i> 告警規則參數
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="tab-logs" data-bs-toggle="tab" data-bs-target="#content-logs">
+                <i class="fas fa-history me-1"></i> 告警發送紀錄
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="alertTabContent">
+        
+        <div class="tab-pane fade show active" id="content-recipients">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0 text-primary"><i class="fas fa-address-book me-2"></i>告警接收清單</h5>
+                    <button class="btn btn-primary" onclick="openRecipientModal()">
+                        <i class="fas fa-user-plus me-1"></i> 新增關係人/群組
+                    </button>
+                </div>
+                
+                <div class="alert alert-info py-2 small">
+                    <i class="fas fa-info-circle me-1"></i> 設定哪些用戶需收到告警資訊。針對群組類型，可輸入多個 Email (以逗號分隔)。
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="20%">名稱</th>
+                                <th width="40%">Email 清單</th>
+                                <th width="10%">類型</th>
+                                <th width="10%" class="text-center">黑名單告警</th>
+                                <th width="10%" class="text-center">失聯告警</th>
+                                <th width="10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recipientTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="content-rules">
+            <div class="card">
+                <div class="card-header bg-danger text-white fw-bold">
+                    <i class="fas fa-exclamation-circle me-2"></i> 黑名單車輛告警 (Blacklist Alert)
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-9">
+                            <h6 class="fw-bold">功能說明</h6>
+                            <p class="text-muted small mb-0">當環保局上傳之黑名單車牌，被系統辨識成功並比對吻合時，立即發送 Email 通知相關人員。</p>
+                        </div>
+                        <div class="col-md-3 text-end border-start">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input" type="checkbox" id="switchBlacklist" checked style="transform: scale(1.5);">
+                                <label class="form-check-label ms-2 fw-bold">啟用中</label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email 信件主旨樣板</label>
+                        <input type="text" class="form-control" value="【緊急通知】發現黑名單車輛 [{{LicensePlate}}] 出沒於 [{{Location}}]">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    <i class="fas fa-video-slash me-2"></i> 設備失聯告警 (Device Offline Alert)
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-9">
+                            <h6 class="fw-bold">功能說明</h6>
+                            <p class="text-muted small mb-0">當啟用中之攝影機超過設定時間未回傳資料，視為失聯異常，發送 Email 通知維運人員。</p>
+                            <p class="text-danger small fw-bold mb-0 mt-1"><i class="fas fa-check me-1"></i>系統邏輯：狀態為「停用」之攝影機，將自動排除，不會觸發告警。</p>
+                        </div>
+                        <div class="col-md-3 text-end border-start">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input" type="checkbox" id="switchOffline" checked style="transform: scale(1.5);">
+                                <label class="form-check-label ms-2 fw-bold">啟用中</label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-auto">
+                            <label class="col-form-label fw-bold">判定失聯門檻時間：</label>
+                        </div>
+                        <div class="col-auto">
+                            <div class="input-group">
+                                <input type="number" class="form-control" value="30" style="width: 100px;">
+                                <span class="input-group-text">分鐘無訊號</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <span class="form-text">建議設定值：30 ~ 60 分鐘</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button class="btn btn-primary btn-lg px-5" onclick="alert('規則參數已儲存生效！')">
+                    <i class="fas fa-save me-1"></i> 儲存所有設定
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="content-logs">
+            <div class="card p-4">
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">時間區間</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="filterStartDate">
+                            <span class="input-group-text">至</span>
+                            <input type="date" class="form-control" id="filterEndDate">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">告警類型</label>
+                        <select class="form-select" id="filterType">
+                            <option value="">全部類型</option>
+                            <option value="blacklist">黑名單告警</option>
+                            <option value="offline">設備失聯告警</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">觸發來源</label>
+                        <input type="text" class="form-control" id="filterSource" placeholder="車號或設備ID...">
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button class="btn btn-primary" onclick="applyLogFilter()">
+                            <i class="fas fa-search me-1"></i> 查詢
+                        </button>
+                        <button class="btn btn-outline-secondary ms-1" onclick="resetLogFilter()">
+                            <i class="fas fa-sync-alt"></i> 重置
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="20%">發送時間</th>
+                                <th width="15%">告警類型</th>
+                                <th width="20%">觸發來源</th>
+                                <th width="15%">通報對象數</th>
+                                <th width="15%">發送狀態</th>
+                                <th width="15%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2 small text-muted">每頁顯示：</span>
+                        <select class="form-select form-select-sm" style="width: auto;" id="rowsPerPage" onchange="changeRowsPerPage()">
+                            <option value="10">10 筆</option>
+                            <option value="20">20 筆</option>
+                            <option value="50">50 筆</option>
+                        </select>
+                        <span class="ms-3 small text-muted" id="paginationInfo">顯示 0 - 0 筆，共 0 筆</span>
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                            </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="recipientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="modalTitle">新增通報對象</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="recipientForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">對象類型</label>
+                        <select class="form-select" id="inputType">
+                            <option value="group">群組 (Group)</option>
+                            <option value="user">個人 (Individual)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">名稱</label>
+                        <input type="text" class="form-control" id="inputName" placeholder="例如：稽查大隊群組">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email 信箱列表</label>
+                        <textarea class="form-control" id="inputEmail" rows="3" placeholder="例如：
+captain@tycg.gov.tw,
+member01@tycg.gov.tw"></textarea>
+                        <div class="form-text">若是群組，請輸入多個 Email，並以<strong>逗號 (,)</strong> 分隔。</div>
+                    </div>
+                    
+                    <hr>
+                    <label class="form-label fw-bold mb-2">訂閱告警類型 (多選)</label>
+                    <div class="card bg-light p-3 border-0">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="checkBlacklist" checked>
+                            <label class="form-check-label text-danger fw-bold" for="checkBlacklist">
+                                <i class="fas fa-exclamation-circle me-1"></i> 黑名單車輛偵測告警
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="checkOffline">
+                            <label class="form-check-label text-warning-dark fw-bold" style="color: #d68100;" for="checkOffline">
+                                <i class="fas fa-video-slash me-1"></i> 攝影機失聯離線告警
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveRecipient()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // --- PART 1: 通報對象邏輯 ---
+    let recipients = [
+        { id: 1, name: "稽查大隊-第一中隊", email: "captain@tycg.gov.tw, member01@tycg.gov.tw, member02@tycg.gov.tw", type: "group", subBlacklist: true, subOffline: false },
+        { id: 2, name: "系統維運人員", email: "admin@tech-support.com", type: "user", subBlacklist: false, subOffline: true },
+        { id: 3, name: "王大明 (科長)", email: "dm.wang@tycg.gov.tw", type: "user", subBlacklist: true, subOffline: true },
+    ];
+
+    function renderRecipients() {
+        const tbody = document.getElementById('recipientTableBody');
+        tbody.innerHTML = '';
+        recipients.forEach((item, index) => {
+            const typeBadge = item.type === 'group' ? `<span class="badge type-badge-group"><i class="fas fa-users me-1"></i>群組</span>` : `<span class="badge type-badge-user"><i class="fas fa-user me-1"></i>個人</span>`;
+            const blIcon = item.subBlacklist ? `<i class="fas fa-check-circle fa-lg check-icon"></i>` : `<i class="fas fa-minus-circle uncheck-icon"></i>`;
+            const olIcon = item.subOffline ? `<i class="fas fa-check-circle fa-lg check-icon"></i>` : `<i class="fas fa-minus-circle uncheck-icon"></i>`;
+            
+            let emailDisplay = item.email;
+            if (item.email.includes(',')) {
+                const emails = item.email.split(',');
+                emailDisplay = `<ul class="email-list">`;
+                emails.forEach(e => { emailDisplay += `<li><i class="fas fa-envelope"></i>${e.trim()}</li>`; });
+                emailDisplay += `</ul>`;
+            } else {
+                emailDisplay = `<div class="font-monospace">${item.email}</div>`;
+            }
+
+            const row = `<tr>
+                <td class="fw-bold text-primary">${item.name}</td>
+                <td>${emailDisplay}</td>
+                <td>${typeBadge}</td>
+                <td class="text-center">${blIcon}</td>
+                <td class="text-center">${olIcon}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="alert('編輯功能')"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRecipient(${index})"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    const recipientModal = new bootstrap.Modal(document.getElementById('recipientModal'));
+    function openRecipientModal() { document.getElementById('recipientForm').reset(); recipientModal.show(); }
+    function saveRecipient() {
+        const name = document.getElementById('inputName').value;
+        const emailInput = document.getElementById('inputEmail').value;
+        const type = document.getElementById('inputType').value;
+        const subBL = document.getElementById('checkBlacklist').checked;
+        const subOL = document.getElementById('checkOffline').checked;
+        if(!name || !emailInput) { alert("請填寫完整資訊"); return; }
+        if(!subBL && !subOL) { alert("請至少勾選一項告警類型"); return; }
+        const emailClean = emailInput.replace(/\n/g, ',').replace(/\s/g, '');
+        recipients.push({ id: Date.now(), name: name, email: emailClean, type: type, subBlacklist: subBL, subOffline: subOL });
+        renderRecipients(); recipientModal.hide();
+    }
+    function deleteRecipient(index) { if(confirm("確定要刪除？")) { recipients.splice(index, 1); renderRecipients(); } }
+
+
+    // --- PART 2: 告警紀錄邏輯 (進階過濾+分頁) ---
+    
+    // 2.1 模擬資料 (產生 25 筆)
+    let allLogs = [];
+    const sourceList = ["KER-5379", "XYZ-9999", "ABC-1234", "CAM-GT-01", "CAM-BH-02", "CAM-LY-03"];
+    
+    // [Updated] Generate exactly 25 entries
+    for (let i = 0; i < 25; i++) {
+        const type = Math.random() > 0.4 ? 'blacklist' : 'offline';
+        const src = type === 'blacklist' ? sourceList[Math.floor(Math.random() * 3)] : sourceList[Math.floor(Math.random() * 3) + 3];
+        const date = new Date(2023, 10, 27 - Math.floor(i/3)); // Generate various dates
+        date.setHours(Math.floor(Math.random()*24), Math.floor(Math.random()*60));
+        
+        allLogs.push({
+            id: i,
+            time: date.toISOString().slice(0, 19).replace('T', ' '),
+            type: type,
+            source: src,
+            count: Math.floor(Math.random() * 5) + 1,
+            status: "success"
+        });
+    }
+
+    // 分頁變數
+    let currentLogs = []; // 目前過濾後的資料
+    let currentPage = 1;
+    let rowsPerPage = 10;
+
+    // 2.2 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        renderRecipients();
+        
+        // 設定預設日期 (最近7天)
+        const today = new Date().toISOString().split('T')[0];
+        const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        document.getElementById('filterStartDate').value = lastWeek;
+        document.getElementById('filterEndDate').value = today;
+
+        applyLogFilter(); // 初始載入
+    });
+
+    // 2.3 篩選功能
+    function applyLogFilter() {
+        const start = document.getElementById('filterStartDate').value;
+        const end = document.getElementById('filterEndDate').value;
+        const type = document.getElementById('filterType').value;
+        const source = document.getElementById('filterSource').value.toLowerCase();
+
+        currentLogs = allLogs.filter(log => {
+            const logDate = log.time.split(' ')[0];
+            const matchTime = (!start || logDate >= start) && (!end || logDate <= end);
+            const matchType = (type === '') || (log.type === type);
+            const matchSource = (source === '') || (log.source.toLowerCase().includes(source));
+            return matchTime && matchType && matchSource;
+        });
+
+        currentPage = 1; // 重置到第一頁
+        renderLogTable();
+        renderPagination();
+    }
+
+    function resetLogFilter() {
+        document.getElementById('filterStartDate').value = "";
+        document.getElementById('filterEndDate').value = "";
+        document.getElementById('filterType').value = "";
+        document.getElementById('filterSource').value = "";
+        applyLogFilter();
+    }
+
+    // 2.4 渲染表格 (支援分頁)
+    function renderLogTable() {
+        const tbody = document.getElementById('logTableBody');
+        tbody.innerHTML = '';
+
+        // 計算分頁範圍
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + parseInt(rowsPerPage);
+        const pageData = currentLogs.slice(startIndex, endIndex);
+
+        if (pageData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">查無符合條件的紀錄</td></tr>';
+            document.getElementById('paginationInfo').innerText = `顯示 0 - 0 筆，共 0 筆`;
+            return;
+        }
+
+        pageData.forEach(log => {
+            let typeHtml = log.type === 'blacklist' 
+                ? `<span class="badge bg-danger">黑名單偵測</span>` 
+                : `<span class="badge bg-warning text-dark">設備失聯</span>`;
+
+            const row = `
+                <tr>
+                    <td>${log.time}</td>
+                    <td>${typeHtml}</td>
+                    <td class="fw-bold text-primary">${log.source}</td>
+                    <td>${log.count} 人</td>
+                    <td><span class="text-success"><i class="fas fa-check me-1"></i>發送成功</span></td>
+                    <td><button class="btn btn-sm btn-outline-secondary" onclick="alert('檢視信件內容: ${log.source}')">詳情</button></td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        // 更新狀態文字
+        document.getElementById('paginationInfo').innerText = `顯示 ${startIndex + 1} - ${Math.min(endIndex, currentLogs.length)} 筆，共 ${currentLogs.length} 筆`;
+    }
+
+    // 2.5 渲染分頁按鈕
+    function renderPagination() {
+        const pagination = document.getElementById('paginationControls');
+        pagination.innerHTML = '';
+        
+        const totalPages = Math.ceil(currentLogs.length / rowsPerPage);
+        if (totalPages <= 1) return;
+
+        // 上一頁
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        pagination.innerHTML += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" onclick="goToPage(${currentPage - 1})">上一頁</a></li>`;
+
+        // 頁碼
+        for (let i = 1; i <= totalPages; i++) {
+            const active = i === currentPage ? 'active' : '';
+            pagination.innerHTML += `<li class="page-item ${active}"><a class="page-link" href="#" onclick="goToPage(${i})">${i}</a></li>`;
+        }
+
+        // 下一頁
+        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+        pagination.innerHTML += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" onclick="goToPage(${currentPage + 1})">下一頁</a></li>`;
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderLogTable();
+        renderPagination();
+    }
+
+    function changeRowsPerPage() {
+        rowsPerPage = document.getElementById('rowsPerPage').value;
+        currentPage = 1;
+        renderLogTable();
+        renderPagination();
+    }
+</script>
+
+</body>
+</html>

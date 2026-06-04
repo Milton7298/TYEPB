@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桃園市環保局非法棄置智慧圍籬系統 - 攝影機進階管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- 核心風格 --- */
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        .header-section { background-color: #2c3e50; color: white; padding: 15px 0; flex-shrink: 0; }
+        
+        .main-container { flex-grow: 1; display: flex; overflow: hidden; }
+        .sidebar { width: 300px; background: white; border-right: 1px solid #dee2e6; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 15px; border-bottom: 1px solid #dee2e6; background-color: #f1f3f5; }
+        .list-group-scroll { overflow-y: auto; flex-grow: 1; }
+        .list-group-item { border-radius: 0; border-left: 0; border-right: 0; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+        .list-group-item:hover { background-color: #f8f9fa; }
+        .list-group-item.active { background-color: #e9ecef; color: #2c3e50; border-color: #dee2e6; border-left-color: #0d6efd; font-weight: bold; }
+        
+        .content-area { flex-grow: 1; padding: 20px; overflow-y: auto; background-color: #f8f9fa; }
+        
+        /* Tree CSS */
+        .tree-container { position: relative; padding-left: 20px; }
+        .tree-root { display: flex; align-items: center; margin-bottom: 20px; }
+        .tree-branch { position: relative; margin-left: 40px; padding-left: 30px; border-left: 2px solid #adb5bd; }
+        .tree-leaf { position: relative; margin-bottom: 15px; display: flex; align-items: center; }
+        .tree-leaf::before { content: ''; position: absolute; left: -32px; top: 50%; width: 30px; height: 2px; background-color: #adb5bd; }
+        
+        .card-root { border-left: 5px solid #2c3e50; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card-leaf { width: 100%; border-left: 4px solid #198754; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card-leaf:hover { transform: translateX(5px); }
+        .card-leaf.disabled-cam { border-left-color: #6c757d; background-color: #f8f9fa; }
+
+        .conn-ok { color: #198754; font-weight: bold; font-size: 0.9em; }
+        .conn-err { color: #dc3545; font-weight: bold; font-size: 0.9em; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* --- [關鍵修改] 行動版 RWD 設定 --- */
+        @media (max-width: 768px) {
+            body { height: auto; min-height: 100vh; overflow-y: auto; }
+            .main-container { flex-direction: column; overflow: visible; }
+            
+            .sidebar { 
+                width: 100%; 
+                height: auto; 
+                max-height: 250px; /* 列表高度限制 */
+                border-right: none; 
+                border-bottom: 5px solid #dee2e6;
+            }
+            
+            .content-area { 
+                width: 100%; 
+                padding: 10px; 
+                overflow: visible; 
+            }
+
+            /* Tree View 在手機版稍微縮排 */
+            .tree-branch { margin-left: 10px; padding-left: 15px; }
+            .tree-leaf::before { width: 15px; left: -17px; }
+            
+            /* 調整卡片內容堆疊，避免太擠 */
+            .card-leaf .row .col-md-4,
+            .card-leaf .row .col-md-2,
+            .card-leaf .row .col-md-3 {
+                width: 100%; /* 強制換行 */
+                margin-bottom: 5px;
+                border-right: none !important; /* 移除分隔線 */
+                display: flex;
+                justify-content: space-between; /* 內容左右對齊 */
+                align-items: center;
+            }
+            /* 針對手機版隱藏某些裝飾性圖示或調整 */
+            .bg-light.rounded-circle { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-section shadow-sm">
+    <div class="container-fluid px-4">
+        <div class="row align-items-center">
+            <div class="col-md-6 col-12">
+                <h4 class="m-0"><i class="fas fa-network-wired me-2"></i>監控點管理</h4>
+            </div>
+            <div class="col-md-6 d-none d-md-block">
+                <div class="input-group">
+                    <span class="input-group-text border-0"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control border-0" placeholder="搜尋監控點名稱、編號或攝影機ID..." onkeyup="handleSearch()">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-container">
+    
+    <div class="sidebar">
+        <div class="sidebar-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-secondary">監控點位列表</h6>
+            <button class="btn btn-sm btn-primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> 新增
+            </button>
+        </div>
+        <div class="p-2 d-md-none bg-light border-bottom">
+            <input type="text" id="searchInputMobile" class="form-control form-control-sm" placeholder="搜尋監控點..." onkeyup="handleSearch(this.value)">
+        </div>
+        <div class="list-group list-group-flush list-group-scroll" id="sidebarList">
+            </div>
+    </div>
+
+    <div class="content-area">
+        <div id="detailView" style="display: none;">
+            
+            <div class="tree-root">
+                <div class="card card-root w-100 bg-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap">
+                            <div class="mb-2">
+                                <h4 class="card-title fw-bold text-dark mb-1" id="viewName">點位名稱</h4>
+                                <span class="badge bg-dark mb-2" id="viewID">ID</span>
+                                <div class="text-muted small">
+                                    <i class="fas fa-map-marker-alt me-1"></i> <span id="viewCoords"></span> | 
+                                    <i class="fas fa-clock me-1"></i> 失聯告警: <span id="viewAlarm"></span> 分鐘
+                                </div>
+                            </div>
+                            <div class="text-end w-100 w-md-auto">
+                                <span class="badge bg-success mb-2" id="viewStatus">啟用中</span>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="openEditModal()">
+                                        <i class="fas fa-edit"></i> 維護
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tree-branch">
+                <h6 class="text-muted small fw-bold mb-3 ps-2"><i class="fas fa-server me-1"></i> 設備狀態監控 (3 機配置)</h6>
+                
+                <div class="tree-leaf">
+                    <div class="card card-leaf bg-white p-2" id="cardCam1">
+                        <div class="card-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4 d-flex align-items-center border-end">
+                                    <div class="bg-light rounded-circle p-2 me-3 text-secondary"><i class="fas fa-camera"></i></div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">攝影機 01</h6>
+                                        <small class="text-muted" id="viewCam1ID">CAM-ID</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center border-end">
+                                    <span class="badge bg-light text-dark border">車牌辨識</span>
+                                </div>
+                                <div class="col-md-3 text-center border-end" id="viewCam1Conn"></div>
+                                <div class="col-md-3 text-center" id="viewCam1Active"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tree-leaf">
+                    <div class="card card-leaf bg-white p-2" id="cardCam2">
+                        <div class="card-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4 d-flex align-items-center border-end">
+                                    <div class="bg-light rounded-circle p-2 me-3 text-secondary"><i class="fas fa-video"></i></div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">攝影機 02</h6>
+                                        <small class="text-muted" id="viewCam2ID">CAM-ID</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center border-end">
+                                    <span class="badge bg-light text-dark border">環境全景</span>
+                                </div>
+                                <div class="col-md-3 text-center border-end" id="viewCam2Conn"></div>
+                                <div class="col-md-3 text-center" id="viewCam2Active"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tree-leaf">
+                    <div class="card card-leaf bg-white p-2" id="cardCam3">
+                        <div class="card-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4 d-flex align-items-center border-end">
+                                    <div class="bg-light rounded-circle p-2 me-3 text-secondary"><i class="fas fa-eye"></i></div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">攝影機 03</h6>
+                                        <small class="text-muted" id="viewCam3ID">CAM-ID</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center border-end">
+                                    <span class="badge bg-light text-dark border">紅外線輔助</span>
+                                </div>
+                                <div class="col-md-3 text-center border-end" id="viewCam3Conn"></div>
+                                <div class="col-md-3 text-center" id="viewCam3Active"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="emptyState" class="h-100 d-flex flex-column justify-content-center align-items-center text-muted py-5">
+            <i class="fas fa-search-location fa-3x mb-3 text-secondary"></i>
+            <h5>請選擇監控點位</h5>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="dataModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="modalTitle">監控點位與攝影機維護</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="monitorForm">
+                    <input type="hidden" id="editIndex">
+                    <h6 class="text-primary border-bottom pb-2 mb-3">監控點位設定</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">點位編號</label>
+                            <input type="text" class="form-control" id="inputID" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">地點名稱</label>
+                            <input type="text" class="form-control" id="inputName" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">經度</label>
+                            <input type="number" step="0.000001" class="form-control" id="inputLng">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">緯度</label>
+                            <input type="number" step="0.000001" class="form-control" id="inputLat">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">失聯告警(分)</label>
+                            <input type="number" class="form-control" id="inputAlarm">
+                        </div>
+                        <div class="col-md-12">
+                             <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="inputPointActive" checked>
+                                <label class="form-check-label">啟用此監控點位</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-4">攝影機配置 (連線與啟用狀態)</h6>
+                    <div class="bg-light p-2 mb-2 rounded border">
+                        <div class="row align-items-center">
+                            <div class="col-2 fw-bold">Cam 01</div>
+                            <div class="col-5"><input type="text" class="form-control form-control-sm" id="inputCam1ID" placeholder="編號/IP"></div>
+                            <div class="col-2"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="inputCam1Conn" checked><label class="small">連線</label></div></div>
+                            <div class="col-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="inputCam1Active" checked><label class="small">啟用</label></div></div>
+                        </div>
+                    </div>
+                    <div class="bg-light p-2 mb-2 rounded border">
+                        <div class="row align-items-center">
+                            <div class="col-2 fw-bold">Cam 02</div>
+                            <div class="col-5"><input type="text" class="form-control form-control-sm" id="inputCam2ID" placeholder="編號/IP"></div>
+                            <div class="col-2"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="inputCam2Conn" checked><label class="small">連線</label></div></div>
+                            <div class="col-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="inputCam2Active" checked><label class="small">啟用</label></div></div>
+                        </div>
+                    </div>
+                    <div class="bg-light p-2 mb-2 rounded border">
+                        <div class="row align-items-center">
+                            <div class="col-2 fw-bold">Cam 03</div>
+                            <div class="col-5"><input type="text" class="form-control form-control-sm" id="inputCam3ID" placeholder="編號/IP"></div>
+                            <div class="col-2"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="inputCam3Conn" checked><label class="small">連線</label></div></div>
+                            <div class="col-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="inputCam3Active" checked><label class="small">啟用</label></div></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveData()">儲存變更</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 資料結構
+    let monitorData = [
+        {
+            id: "LOC-GT-01",
+            name: "大園區台61線大園交流道",
+            lat: 23.1934, lng: 120.3645, alarm: 30, active: true,
+            cameras: [
+                { id: "CAM-GT-01", online: true, active: true },
+                { id: "CAM-GT-02", online: true, active: true },
+                { id: "CAM-GT-03", online: false, active: true } 
+            ]
+        },
+        {
+            id: "LOC-BH-02",
+            name: "觀音區台61線觀音交流道",
+            lat: 23.3642, lng: 120.4431, alarm: 20, active: true,
+            cameras: [
+                { id: "CAM-BH-01", online: true, active: true },
+                { id: "CAM-BH-02", online: true, active: true },
+                { id: "CAM-BH-03", online: true, active: true }
+            ]
+        },
+        {
+            id: "LOC-LY-03",
+            name: "蘆竹區國道一號南崁交流道",
+            lat: 23.2721, lng: 120.3956, alarm: 60, active: false,
+            cameras: [
+                { id: "CAM-LY-01", online: false, active: false },
+                { id: "CAM-LY-02", online: false, active: false },
+                { id: "CAM-LY-03", online: false, active: false }
+            ]
+        }
+    ];
+
+    let currentIndex = -1;
+    let filteredIndices = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        handleSearch();
+    });
+
+    function renderSidebar(indices) {
+        const listGroup = document.getElementById('sidebarList');
+        listGroup.innerHTML = '';
+
+        if (indices.length === 0) {
+            listGroup.innerHTML = '<div class="text-center p-3 text-muted small">無符合項目</div>';
+            return;
+        }
+
+        indices.forEach(index => {
+            const item = monitorData[index];
+            const activeClass = (index === currentIndex) ? 'active' : '';
+            const isFullyActive = item.active; 
+            const statusColor = isFullyActive ? 'text-success' : 'text-secondary';
+            
+            const html = `
+                <button type="button" class="list-group-item list-group-item-action ${activeClass}" onclick="selectPoint(${index})">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <small class="mb-1 opacity-75">${item.id}</small>
+                        <small><i class="fas fa-circle ${statusColor}" style="font-size: 8px;"></i></small>
+                    </div>
+                    <div class="mb-1 text-truncate fw-bold">${item.name}</div>
+                </button>
+            `;
+            listGroup.innerHTML += html;
+        });
+    }
+
+    function getConnHtml(isOnline) {
+        if (isOnline) return `<span class="conn-ok"><i class="fas fa-wifi me-1"></i>正常</span>`;
+        return `<span class="conn-err"><i class="fas fa-exclamation-triangle me-1"></i>異常</span>`;
+    }
+
+    function getActiveHtml(isActive) {
+        if (isActive) return `<span class="badge bg-primary">啟用</span>`;
+        return `<span class="badge bg-secondary">停用</span>`;
+    }
+
+    window.selectPoint = function(index) {
+        currentIndex = index;
+        const item = monitorData[index];
+        
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('detailView').style.display = 'block';
+        renderSidebar(filteredIndices); 
+
+        document.getElementById('viewName').innerText = item.name;
+        document.getElementById('viewID').innerText = item.id;
+        document.getElementById('viewCoords').innerText = `${item.lat}, ${item.lng}`;
+        document.getElementById('viewAlarm').innerText = item.alarm;
+        
+        const statusEl = document.getElementById('viewStatus');
+        statusEl.className = item.active ? 'badge bg-success mb-2' : 'badge bg-secondary mb-2';
+        statusEl.innerText = item.active ? '啟用中' : '已停用';
+
+        for (let i = 0; i < 3; i++) {
+            const cam = item.cameras[i];
+            const num = i + 1;
+            document.getElementById(`viewCam${num}ID`).innerText = cam.id || '未設定';
+            document.getElementById(`viewCam${num}Conn`).innerHTML = getConnHtml(cam.online);
+            document.getElementById(`viewCam${num}Active`).innerHTML = getActiveHtml(cam.active);
+            const card = document.getElementById(`cardCam${num}`);
+            if(cam.active) card.classList.remove('disabled-cam');
+            else card.classList.add('disabled-cam');
+        }
+    }
+
+    window.handleSearch = function(val) {
+        const keyword = (val || document.getElementById('searchInput').value).toLowerCase();
+        filteredIndices = monitorData.map((item, index) => {
+            const matchName = item.name.toLowerCase().includes(keyword);
+            const matchID = item.id.toLowerCase().includes(keyword);
+            const matchCam = item.cameras.some(cam => cam.id.toLowerCase().includes(keyword));
+            return (matchName || matchID || matchCam) ? index : -1;
+        }).filter(index => index !== -1);
+        renderSidebar(filteredIndices);
+    }
+
+    const dataModal = new bootstrap.Modal(document.getElementById('dataModal'));
+
+    window.openAddModal = function() {
+        document.getElementById('monitorForm').reset();
+        document.getElementById('editIndex').value = "";
+        document.getElementById('modalTitle').innerText = "新增監控點位";
+        dataModal.show();
+    }
+
+    window.openEditModal = function() {
+        if (currentIndex === -1) return;
+        const item = monitorData[currentIndex];
+        document.getElementById('editIndex').value = currentIndex;
+        document.getElementById('modalTitle').innerText = "維護監控點位資料";
+        document.getElementById('inputID').value = item.id;
+        document.getElementById('inputName').value = item.name;
+        document.getElementById('inputLat').value = item.lat;
+        document.getElementById('inputLng').value = item.lng;
+        document.getElementById('inputAlarm').value = item.alarm;
+        document.getElementById('inputPointActive').checked = item.active;
+        for (let i = 0; i < 3; i++) {
+            const num = i + 1;
+            document.getElementById(`inputCam${num}ID`).value = item.cameras[i].id;
+            document.getElementById(`inputCam${num}Conn`).checked = item.cameras[i].online;
+            document.getElementById(`inputCam${num}Active`).checked = item.cameras[i].active;
+        }
+        dataModal.show();
+    }
+
+    window.saveData = function() {
+        const idx = document.getElementById('editIndex').value;
+        const id = document.getElementById('inputID').value;
+        const name = document.getElementById('inputName').value;
+        if (!id || !name) { alert("請填寫編號與名稱"); return; }
+
+        let newCams = [];
+        for (let i = 1; i <= 3; i++) {
+            newCams.push({
+                id: document.getElementById(`inputCam${i}ID`).value || `CAM-${i}`,
+                online: document.getElementById(`inputCam${i}Conn`).checked,
+                active: document.getElementById(`inputCam${i}Active`).checked
+            });
+        }
+
+        const newData = {
+            id, name,
+            lat: document.getElementById('inputLat').value || 0,
+            lng: document.getElementById('inputLng').value || 0,
+            alarm: document.getElementById('inputAlarm').value || 30,
+            active: document.getElementById('inputPointActive').checked,
+            cameras: newCams
+        };
+
+        if (idx === "") {
+            monitorData.push(newData);
+            handleSearch();
+            selectPoint(monitorData.length - 1);
+        } else {
+            monitorData[idx] = newData;
+            handleSearch();
+            selectPoint(idx);
+        }
+        dataModal.hide();
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桃園市環保局非法棄置智慧圍籬系統 - 報表管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- 核心風格 (一致性維持) --- */
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; }
+        .header-section { background-color: #2c3e50; color: white; padding: 20px 0; margin-bottom: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
+        
+        /* Tab 樣式 */
+        .nav-tabs .nav-link { color: #495057; font-weight: bold; padding: 12px 20px; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-top: 3px solid #0d6efd; border-bottom-color: transparent; }
+        
+        /* 排行榜樣式 */
+        .rank-badge { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; color: white; }
+        .rank-1 { background-color: #ffc107; box-shadow: 0 0 10px rgba(255, 193, 7, 0.5); } /* Gold */
+        .rank-2 { background-color: #adb5bd; } /* Silver */
+        .rank-3 { background-color: #cd7f32; } /* Bronze */
+        .rank-other { background-color: #6c757d; font-size: 0.8em; width: 25px; height: 25px; }
+
+        /* 連結樣式 */
+        .clickable-number { cursor: pointer; text-decoration: underline; color: #0d6efd; font-weight: bold; }
+        .clickable-number:hover { color: #0a58ca; }
+    </style>
+</head>
+<body>
+
+<div class="header-section">
+    <div class="container">
+        <h2 class="m-0"><i class="fas fa-chart-line me-2"></i>桃園市環保局非法棄置智慧圍籬系統</h2>
+        <p class="m-0 text-white-50">統計報表與數據分析中心</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+    <ul class="nav nav-tabs mb-4" id="reportTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="tab-recog" data-bs-toggle="tab" data-bs-target="#content-recog">
+                <i class="fas fa-camera me-1"></i> 當月辨識結果統計
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="tab-upload" data-bs-toggle="tab" data-bs-target="#content-upload">
+                <i class="fas fa-cloud-upload-alt me-1"></i> 上傳車牌統計 (含明細)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="tab-blacklist" data-bs-toggle="tab" data-bs-target="#content-blacklist">
+                <i class="fas fa-list-ol me-1"></i> 當月黑名單排行
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="reportTabContent">
+        
+        <div class="tab-pane fade show active" id="content-recog">
+            <div class="card p-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">統計月份</label>
+                        <input type="month" class="form-control" id="recogMonth">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">地點名稱</label>
+                        <select class="form-select" id="recogLoc">
+                            <option value="">所有地點</option>
+                            <option value="大園區">大園區台61線大園交流道</option>
+                            <option value="觀音區">觀音區台61線觀音交流道</option>
+                            <option value="蘆竹區">蘆竹區國道一號南崁交流道</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">辨識結果篩選</label>
+                        <select class="form-select" id="recogStatus">
+                            <option value="all">全部 (成功+失敗)</option>
+                            <option value="success">僅顯示成功</option>
+                            <option value="fail">僅顯示失敗</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button class="btn btn-primary" onclick="renderRecogTable()"><i class="fas fa-search me-1"></i> 查詢</button>
+                        <button class="btn btn-outline-success" onclick="exportCSV('recog')"><i class="fas fa-file-csv me-1"></i> 匯出 CSV</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="fas fa-table me-2"></i> 每日辨識統計列表
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>日期</th>
+                                    <th class="text-start">地點名稱</th>
+                                    <th>辨識總數</th>
+                                    <th class="text-success">辨識成功</th>
+                                    <th class="text-danger">辨識失敗</th>
+                                    <th style="width: 20%;">成功率</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recogTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="content-upload">
+            <div class="card p-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">上傳時間區間</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="uploadStart">
+                            <span class="input-group-text">~</span>
+                            <input type="date" class="form-control" id="uploadEnd">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">上傳狀態</label>
+                        <select class="form-select" id="uploadStatus">
+                            <option value="all">全部</option>
+                            <option value="success">上傳成功</option>
+                            <option value="fail">上傳失敗</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5 text-end">
+                        <button class="btn btn-primary" onclick="renderUploadTable()"><i class="fas fa-search me-1"></i> 查詢</button>
+                        <button class="btn btn-outline-success" onclick="exportCSV('upload')"><i class="fas fa-file-csv me-1"></i> 匯出 CSV</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="fas fa-cloud-upload-alt me-2"></i> API 上傳統計 (點擊數字可查看明細)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered mb-0 align-middle text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>日期</th>
+                                    <th>API 上傳狀態</th>
+                                    <th>案件數量 (筆)</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uploadTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="content-blacklist">
+            <div class="card p-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">統計月份</label>
+                        <input type="month" class="form-control" id="rankMonth">
+                    </div>
+                    <div class="col-md-9 text-end">
+                        <button class="btn btn-primary" onclick="renderRankTable()"><i class="fas fa-trophy me-1"></i> 計算排行</button>
+                        <button class="btn btn-outline-secondary" onclick="window.print()"><i class="fas fa-print me-1"></i> 列印報表</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-warning bg-opacity-10 fw-bold py-3 text-dark border-bottom">
+                    <i class="fas fa-crown me-2 text-warning"></i> 環保局黑名單車輛 - 出現頻率排行榜
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" width="10%">排名</th>
+                                    <th width="20%">車牌號碼</th>
+                                    <th width="20%">車種/備註</th>
+                                    <th class="text-center" width="20%">當月出現次數</th>
+                                    <th width="30%">最近出沒地點</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="fas fa-list-alt me-2"></i>上傳明細清單</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table table-striped mb-0 table-sm">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>時間</th>
+                            <th>車牌</th>
+                            <th>狀態</th>
+                            <th>訊息</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailModalBody">
+                        </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // --- 1. 初始化與模擬資料 ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // 設定預設月份/日期
+        const today = new Date();
+        const yyyyMm = today.toISOString().slice(0, 7);
+        const yyyyMmDd = today.toISOString().slice(0, 10);
+        
+        document.getElementById('recogMonth').value = yyyyMm;
+        document.getElementById('rankMonth').value = yyyyMm;
+        document.getElementById('uploadStart').value = yyyyMmDd;
+        document.getElementById('uploadEnd').value = yyyyMmDd;
+
+        renderRecogTable();
+        renderUploadTable();
+        renderRankTable();
+    });
+
+    // --- Tab 1: 辨識統計邏輯 ---
+    function renderRecogTable() {
+        const tbody = document.getElementById('recogTableBody');
+        tbody.innerHTML = '';
+        
+        // 模擬資料生成 (Day 1 ~ Day 5)
+        const mockData = [
+            { date: "2023-11-27", loc: "大園區台61線大園交流道", total: 150, success: 145, fail: 5 },
+            { date: "2023-11-27", loc: "觀音區台61線觀音交流道", total: 120, success: 110, fail: 10 },
+            { date: "2023-11-26", loc: "大園區台61線大園交流道", total: 140, success: 138, fail: 2 },
+            { date: "2023-11-26", loc: "蘆竹區國道一號南崁交流道", total: 90, success: 80, fail: 10 },
+        ];
+
+        mockData.forEach(item => {
+            const rate = Math.round((item.success / item.total) * 100);
+            let barColor = rate >= 90 ? 'bg-success' : (rate >= 70 ? 'bg-warning' : 'bg-danger');
+
+            const row = `
+                <tr>
+                    <td>${item.date}</td>
+                    <td class="text-start">${item.loc}</td>
+                    <td class="fw-bold">${item.total}</td>
+                    <td class="text-success">${item.success}</td>
+                    <td class="text-danger">${item.fail}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2 small fw-bold">${rate}%</span>
+                            <div class="progress flex-grow-1" style="height: 6px;">
+                                <div class="progress-bar ${barColor}" role="progressbar" style="width: ${rate}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // --- Tab 2: 上傳統計邏輯 ---
+    function renderUploadTable() {
+        const tbody = document.getElementById('uploadTableBody');
+        tbody.innerHTML = '';
+
+        // 模擬統計資料
+        const mockUploadStats = [
+            { date: "2023-11-27", status: "success", count: 255, label: "上傳成功" },
+            { date: "2023-11-27", status: "fail", count: 15, label: "上傳失敗" },
+            { date: "2023-11-26", status: "success", count: 230, label: "上傳成功" },
+            { date: "2023-11-26", status: "fail", count: 5, label: "上傳失敗" }
+        ];
+
+        const filterStatus = document.getElementById('uploadStatus').value; // all, success, fail
+
+        mockUploadStats.forEach(item => {
+            if (filterStatus !== 'all' && item.status !== filterStatus) return;
+
+            const badgeClass = item.status === 'success' ? 'bg-success' : 'bg-danger';
+            
+            const row = `
+                <tr>
+                    <td>${item.date}</td>
+                    <td><span class="badge ${badgeClass}">${item.label}</span></td>
+                    <td>
+                        <span class="clickable-number" onclick="openDetailModal('${item.date}', '${item.status}')">
+                            ${item.count}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="alert('匯出本日 CSV')"><i class="fas fa-download"></i></button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // 開啟明細 Modal
+    function openDetailModal(date, status) {
+        const modalBody = document.getElementById('detailModalBody');
+        modalBody.innerHTML = '';
+        const title = status === 'success' ? '上傳成功' : '上傳失敗';
+        
+        // 模擬明細資料
+        let rows = '';
+        for(let i=1; i<=10; i++) {
+            const time = `${date} 10:0${i}:00`;
+            const plate = `ABC-${1000+i}`;
+            const msg = status === 'success' ? '200 OK' : '500 Server Error';
+            const color = status === 'success' ? 'text-success' : 'text-danger';
+            rows += `
+                <tr>
+                    <td>${time}</td>
+                    <td class="font-monospace fw-bold">${plate}</td>
+                    <td class="${color}">${title}</td>
+                    <td class="small text-muted">${msg}</td>
+                </tr>
+            `;
+        }
+        modalBody.innerHTML = rows;
+
+        const myModal = new bootstrap.Modal(document.getElementById('detailModal'));
+        myModal.show();
+    }
+
+    // --- Tab 3: 黑名單排行邏輯 ---
+    function renderRankTable() {
+        const tbody = document.getElementById('rankTableBody');
+        tbody.innerHTML = '';
+
+        const mockRank = [
+            { plate: "KER-5379", type: "大貨車 (載運廢棄物)", count: 12, lastLoc: "大園區台61線大園交流道" },
+            { plate: "XYZ-8888", type: "小貨車", count: 9, lastLoc: "觀音區台61線觀音交流道" },
+            { plate: "ABC-1234", type: "聯結車", count: 7, lastLoc: "蘆竹區國道一號南崁交流道" },
+            { plate: "TQA-5566", type: "大貨車", count: 5, lastLoc: "大園區台61線大園交流道" },
+            { plate: "QQ-999", type: "小貨車", count: 3, lastLoc: "觀音區台61線觀音交流道" },
+        ];
+
+        mockRank.forEach((item, index) => {
+            const rank = index + 1;
+            let rankClass = 'rank-other';
+            let icon = '';
+            
+            if (rank === 1) { rankClass = 'rank-1'; icon = '<i class="fas fa-trophy text-warning me-1"></i>'; }
+            else if (rank === 2) { rankClass = 'rank-2'; }
+            else if (rank === 3) { rankClass = 'rank-3'; }
+
+            const row = `
+                <tr>
+                    <td class="text-center">
+                        <span class="rank-badge ${rankClass}">${rank}</span>
+                    </td>
+                    <td class="fw-bold font-monospace text-primary">${icon}${item.plate}</td>
+                    <td>${item.type}</td>
+                    <td class="text-center fw-bold fs-5">${item.count}</td>
+                    <td class="text-muted small">${item.lastLoc}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // --- 通用: 匯出 CSV ---
+    function exportCSV(type) {
+        let filename = "report.csv";
+        if(type === 'recog') filename = "monthly_recognition_stats.csv";
+        if(type === 'upload') filename = "upload_stats.csv";
+        
+        alert(`正在匯出報表：${filename}\n(此為模擬功能)`);
+    }
+
+</script>
+
+</body>
+</html>

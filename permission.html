@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桃園市環保局非法棄置智慧圍籬系統 - 權限管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- 核心風格 --- */
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; }
+        .header-section { background-color: #2c3e50; color: white; padding: 20px 0; margin-bottom: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
+        
+        /* Tab 樣式 */
+        .nav-tabs .nav-link { color: #495057; font-weight: bold; padding: 12px 20px; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-top: 3px solid #0d6efd; border-bottom-color: transparent; }
+        
+        /* 角色標籤顏色 */
+        .badge-role-admin { background-color: #dc3545; } /* 系統管理員 */
+        .badge-role-manager { background-color: #0d6efd; } /* 單位主管 */
+        .badge-role-user { background-color: #198754; } /* 一般經辦 */
+        .badge-role-guest { background-color: #6c757d; } /* 僅供瀏覽 */
+
+        /* 權限矩陣表格 */
+        .perm-table th { background-color: #f8f9fa; text-align: center; vertical-align: middle; }
+        .perm-table td { text-align: center; vertical-align: middle; }
+        .module-name { text-align: left !important; font-weight: bold; color: #2c3e50; }
+        
+        /* Checkbox 大小 */
+        .form-check-input { width: 1.2em; height: 1.2em; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="header-section">
+    <div class="container">
+        <h2 class="m-0"><i class="fas fa-user-shield me-2"></i>桃園市環保局非法棄置智慧圍籬系統</h2>
+        <p class="m-0 text-white-50">使用者帳號與角色權限配置中心</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+    <ul class="nav nav-tabs mb-4" id="permTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="tab-users" data-bs-toggle="tab" data-bs-target="#content-users">
+                <i class="fas fa-users me-1"></i> 使用者帳號管理
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="tab-roles" data-bs-toggle="tab" data-bs-target="#content-roles">
+                <i class="fas fa-key me-1"></i> 角色權限設定 (RBAC)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="permTabContent">
+        
+        <div class="tab-pane fade show active" id="content-users">
+            <div class="card p-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">關鍵字搜尋</label>
+                        <input type="text" class="form-control" id="userSearch" placeholder="姓名、帳號或Email...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">所屬單位</label>
+                        <select class="form-select">
+                            <option value="">全部單位</option>
+                            <option value="稽查大隊">稽查大隊</option>
+                            <option value="資訊科">資訊科</option>
+                            <option value="廢棄物管理科">廢棄物管理科</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">角色篩選</label>
+                        <select class="form-select">
+                            <option value="">全部角色</option>
+                            <option value="admin">系統管理員</option>
+                            <option value="manager">單位主管</option>
+                            <option value="user">一般經辦</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button class="btn btn-primary" onclick="openUserModal()"><i class="fas fa-user-plus me-1"></i> 新增使用者</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>帳號 (Email)</th>
+                                    <th>所屬單位</th>
+                                    <th>系統角色</th>
+                                    <th>狀態</th>
+                                    <th>最後登入時間</th>
+                                    <th class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white small text-muted">顯示 1-5 筆，共 12 筆資料</div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="content-roles">
+            <div class="card p-4">
+                <div class="alert alert-info border-0 border-start border-4 border-info">
+                    <h6 class="fw-bold"><i class="fas fa-info-circle me-1"></i>權限設定說明</h6>
+                    <small>請勾選各角色對應模組的操作權限。此設定將影響所有屬於該角色的使用者。</small>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered perm-table">
+                        <thead class="table-dark">
+                            <tr>
+                                <th rowspan="2" width="20%">功能模組</th>
+                                <th rowspan="2" width="15%">權限項目</th>
+                                <th colspan="3">系統角色 (Role)</th>
+                            </tr>
+                            <tr>
+                                <th width="15%" class="bg-secondary">一般經辦</th>
+                                <th width="15%" class="bg-primary">單位主管</th>
+                                <th width="15%" class="bg-danger">系統管理員</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td rowspan="3" class="module-name"><i class="fas fa-list-alt me-2"></i>黑名單管理</td>
+                                <td>查詢/檢視</td>
+                                <td><input type="checkbox" class="form-check-input" checked disabled></td>
+                                <td><input type="checkbox" class="form-check-input" checked disabled></td>
+                                <td><input type="checkbox" class="form-check-input" checked disabled></td>
+                            </tr>
+                            <tr>
+                                <td>新增/匯入</td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+                            <tr>
+                                <td>修改/停用</td>
+                                <td><input type="checkbox" class="form-check-input"></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+
+                            <tr>
+                                <td rowspan="3" class="module-name"><i class="fas fa-camera me-2"></i>車牌辨識與影像</td>
+                                <td>查詢/下載影像</td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+                            <tr>
+                                <td>人工校正(無法辨識)</td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+                            <tr>
+                                <td>設備參數設定</td>
+                                <td><input type="checkbox" class="form-check-input"></td>
+                                <td><input type="checkbox" class="form-check-input"></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+
+                            <tr>
+                                <td rowspan="2" class="module-name"><i class="fas fa-chart-bar me-2"></i>報表與告警</td>
+                                <td>檢視報表/匯出</td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+                            <tr>
+                                <td>告警規則設定</td>
+                                <td><input type="checkbox" class="form-check-input"></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+
+                            <tr class="table-warning">
+                                <td rowspan="3" class="module-name"><i class="fas fa-cogs me-2"></i>系統核心設定</td>
+                                <td>API 參數配置</td>
+                                <td><input type="checkbox" class="form-check-input" disabled></td>
+                                <td><input type="checkbox" class="form-check-input" disabled></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td>日誌/稽核查詢</td>
+                                <td><input type="checkbox" class="form-check-input" disabled></td>
+                                <td><input type="checkbox" class="form-check-input" disabled></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td>使用者權限管理</td>
+                                <td><input type="checkbox" class="form-check-input" disabled></td>
+                                <td><input type="checkbox" class="form-check-input" disabled></td>
+                                <td><input type="checkbox" class="form-check-input" checked></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-3">
+                    <button class="btn btn-primary px-4" onclick="alert('權限矩陣已更新！')"><i class="fas fa-save me-1"></i> 儲存權限設定</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="modalTitle">新增使用者</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">帳號 (Email) <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="inputEmail" placeholder="name@tycg.gov.tw" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">使用者姓名 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="inputName" placeholder="例如：王小明" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">所屬單位</label>
+                            <select class="form-select" id="inputUnit">
+                                <option value="稽查大隊">稽查大隊</option>
+                                <option value="廢棄物管理科">廢棄物管理科</option>
+                                <option value="資訊科">資訊科</option>
+                                <option value="委外廠商">委外廠商</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">系統角色 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="inputRole">
+                                <option value="user">一般經辦</option>
+                                <option value="manager">單位主管</option>
+                                <option value="admin">系統管理員</option>
+                                <option value="guest">僅供瀏覽</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">密碼設定</label>
+                        <input type="password" class="form-control" id="inputPwd" placeholder="預設密碼：Taoyuan1234" disabled>
+                        <div class="form-text text-muted">新增時使用預設密碼，使用者登入後需強制修改。</div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="inputStatus" checked>
+                        <label class="form-check-label fw-bold" for="inputStatus">啟用此帳號</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 1. 模擬使用者資料
+    let users = [
+        { name: "系統管理員", email: "admin@system.local", unit: "資訊科", role: "admin", status: true, lastLogin: "2023-11-27 08:01" },
+        { name: "王大明 (科長)", email: "dm.wang@tycg.gov.tw", unit: "廢棄物管理科", role: "manager", status: true, lastLogin: "2023-11-27 09:30" },
+        { name: "李小華 (稽查)", email: "sh.lee@tycg.gov.tw", unit: "稽查大隊", role: "user", status: true, lastLogin: "2023-11-27 10:15" },
+        { name: "陳測試", email: "test.chen@tycg.gov.tw", unit: "稽查大隊", role: "user", status: false, lastLogin: "2023-10-01 14:00" },
+        { name: "廠商維運", email: "support@vendor.com", unit: "委外廠商", role: "admin", status: true, lastLogin: "2023-11-26 23:00" },
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderUserTable();
+    });
+
+    // 2. 渲染使用者列表
+    function renderUserTable() {
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+
+        users.forEach((user, index) => {
+            // 角色 Badge
+            let roleBadge = '';
+            let roleName = '';
+            if(user.role === 'admin') { roleBadge = 'badge-role-admin'; roleName = '系統管理員'; }
+            else if(user.role === 'manager') { roleBadge = 'badge-role-manager'; roleName = '單位主管'; }
+            else { roleBadge = 'badge-role-user'; roleName = '一般經辦'; }
+
+            // 狀態 Switch (模擬)
+            const statusSwitch = user.status ? 'checked' : '';
+            const statusText = user.status ? '<span class="text-success">啟用</span>' : '<span class="text-muted">停用</span>';
+
+            const row = `
+                <tr>
+                    <td class="fw-bold">${user.name}</td>
+                    <td class="font-monospace text-muted">${user.email}</td>
+                    <td>${user.unit}</td>
+                    <td><span class="badge ${roleBadge}">${roleName}</span></td>
+                    <td>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" ${statusSwitch} onchange="toggleUserStatus(${index})">
+                            <label class="form-check-label small">${statusText}</label>
+                        </div>
+                    </td>
+                    <td class="small text-muted">${user.lastLogin}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="alert('編輯使用者：${user.name}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="resetPwd('${user.name}')" title="重設密碼"><i class="fas fa-key"></i></button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // 3. 模態框邏輯
+    const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+
+    function openUserModal() {
+        document.getElementById('userForm').reset();
+        userModal.show();
+    }
+
+    function saveUser() {
+        const name = document.getElementById('inputName').value;
+        const email = document.getElementById('inputEmail').value;
+        const unit = document.getElementById('inputUnit').value;
+        const role = document.getElementById('inputRole').value;
+        const status = document.getElementById('inputStatus').checked;
+
+        if(!name || !email) { alert("請填寫必填欄位"); return; }
+
+        users.push({
+            name: name,
+            email: email,
+            unit: unit,
+            role: role,
+            status: status,
+            lastLogin: "-"
+        });
+
+        renderUserTable();
+        userModal.hide();
+        alert("使用者新增成功！");
+    }
+
+    // 4. 其他操作
+    function toggleUserStatus(index) {
+        users[index].status = !users[index].status;
+        renderUserTable(); // 重新渲染以更新文字
+    }
+
+    function resetPwd(name) {
+        if(confirm(`確定要重設 [${name}] 的密碼嗎？\n重設後密碼將恢復為預設值。`)) {
+            alert("密碼已重設，並寄送通知信至使用者信箱。");
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; padding: 20px; }
+        .card-counter { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: none; border-radius: 10px; transition: .3s; }
+        .card-counter:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .icon-box { font-size: 2.5rem; opacity: 0.3; }
+        .h-custom { height: 100%; }
+        
+        /* GIS 地圖容器樣式 */
+        #gisMap {
+            width: 100%;
+            height: 350px;
+            border-bottom-left-radius: 0.375rem;
+            border-bottom-right-radius: 0.375rem;
+            z-index: 1; /* 避免覆蓋 bootstrap 的 dropdown */
+        }
+    </style>
+</head>
+<body>
+
+    <h4 class="mb-4 fw-bold text-secondary"><i class="fas fa-tachometer-alt me-2"></i>系統運作儀表板 (Dashboard)</h4>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card card-counter bg-primary text-white h-custom p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">今日辨識總量</h6>
+                        <h2 class="mb-0 fw-bold">1,245</h2>
+                        <small>較昨日 +5%</small>
+                    </div>
+                    <i class="fas fa-camera icon-box"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-counter bg-danger text-white h-custom p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">黑名單告警</h6>
+                        <h2 class="mb-0 fw-bold">3</h2>
+                        <small>未處理案件</small>
+                    </div>
+                    <i class="fas fa-exclamation-triangle icon-box"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-counter bg-success text-white h-custom p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">API 上傳成功率</h6>
+                        <h2 class="mb-0 fw-bold">99.8%</h2>
+                        <small>正常運作中</small>
+                    </div>
+                    <i class="fas fa-cloud-upload-alt icon-box"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-counter bg-warning text-dark h-custom p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">設備在線率</h6>
+                        <h2 class="mb-0 fw-bold">92%</h2>
+                        <small>2 支攝影機離線</small>
+                    </div>
+                    <i class="fas fa-video icon-box"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-map-marked-alt me-2 text-primary"></i>最新違規熱點地圖 (即時連線)</span>
+                    <span class="badge bg-success"><i class="fas fa-wifi me-1"></i>GIS 已連線</span>
+                </div>
+                <div class="card-body p-0">
+                    <div id="gisMap"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-bold py-3"><i class="fas fa-list-ul me-2"></i>待辦事項 / 系統公告</div>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 fw-bold text-danger">待處理：人工校正</h6>
+                            <small>3 分鐘前</small>
+                        </div>
+                        <p class="mb-1 small text-muted">蘆竹區有 1 筆無法辨識案件需確認。</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 fw-bold text-dark">系統維護通知</h6>
+                            <small class="text-muted">2023/11/30</small>
+                        </div>
+                        <p class="mb-1 small text-muted">預計於本週五晚間進行資料庫備份作業。</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 fw-bold text-dark">黑名單更新</h6>
+                            <small class="text-muted">2023/11/27</small>
+                        </div>
+                        <p class="mb-1 small text-muted">環保局已匯入本月份最新列管名單。</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('
