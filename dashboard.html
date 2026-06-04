@@ -18,13 +18,15 @@
             position: relative;
             width: 100%;
             height: 350px;
-            background: #e2e8f0 url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Taiwan_Taoyuan_City_location_map.svg/800px-Taiwan_Taoyuan_City_location_map.svg.png') no-repeat center center;
+            /* 【修改重點】改為讀取本地端圖檔，徹底解決 GitHub Pages 防盜鏈破圖問題 */
+            background: #e2e8f0 url('map_bg.jpg') no-repeat center center;
             background-size: cover;
             border-bottom-left-radius: 0.375rem;
             border-bottom-right-radius: 0.375rem;
             overflow: hidden;
         }
         
+        /* 科技感網格遮罩 */
         .static-map-overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(240, 248, 255, 0.65);
@@ -32,6 +34,7 @@
             background-size: 30px 30px; z-index: 1;
         }
 
+        /* 點位樣式 */
         .map-pin {
             position: absolute; width: 18px; height: 18px; border-radius: 50%;
             border: 2px solid #fff; box-shadow: 0 0 8px rgba(0,0,0,0.6);
@@ -41,6 +44,7 @@
         .pin-normal { background-color: #198754; }
         .pin-alert { background-color: #dc3545; animation: pulse-alert 1.5s infinite; }
         
+        /* 點位資訊卡 */
         .pin-label {
             position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
             margin-top: 8px; background: rgba(255, 255, 255, 0.95); padding: 5px 10px;
