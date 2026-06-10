@@ -17,6 +17,11 @@
         .nav-tabs .nav-link.active { color: #0d6efd; border-top: 3px solid #0d6efd; }
         .badge-recog-success { background-color: #198754; }
         .badge-recog-fail { background-color: #dc3545; }
+        
+        /* 排序欄位標題樣式 */
+        .sortable { cursor: pointer; user-select: none; transition: background-color 0.2s; white-space: nowrap; }
+        .sortable:hover { background-color: #e2e6ea; }
+        .sort-icon { margin-left: 5px; font-size: 0.85em; }
     </style>
 </head>
 <body>
@@ -37,52 +42,74 @@
 
 <div class="container mb-5">
     <ul class="nav nav-tabs mb-4" id="myTab">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#query-content"><i class="fas fa-search me-1"></i> 辨識資料查詢</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#adjust-content"><i class="fas fa-wrench me-1"></i> 無法辨識案件調整 <span class="badge bg-danger rounded-pill ms-1" id="unrecognizedCount">0</span></button></li>
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#query-content">
+                <i class="fas fa-search me-1"></i> 辨識事件查詢
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#adjust-content">
+                <i class="fas fa-wrench me-1"></i> 無法辨識事件調整 
+                <span class="badge bg-danger rounded-pill ms-1" id="unrecognizedCount">0</span>
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content" id="myTabContent">
         <div class="tab-pane fade show active" id="query-content">
             <div class="card p-4">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-bold">拍攝時間區間</label>
                         <div class="input-group">
                             <input type="date" class="form-control" id="qDateStart">
-                            <span class="input-group-text">~</span><input type="date" class="form-control" id="qDateEnd">
+                            <span class="input-group-text">~</span>
+                            <input type="date" class="form-control" id="qDateEnd">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">點位/設備</label>
                         <select class="form-select" id="qLocation">
                             <option value="">所有地點</option>
-                            <option value="新屋區">新屋區 (LOCA_..._0001)</option>
-                            <option value="觀音區">觀音區 (LOCA_..._0002)</option>
-                            <option value="大園區">大園區 (LOCA_..._0003)</option>
+                            <option value="新屋區">台61北向入口(新屋區)</option>
+                            <option value="觀音區">台61南向入口(觀音區)</option>
+                            <option value="大園區">台61北向入口(大園區)</option>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-bold">狀態</label>
-                        <select class="form-select" id="qStatus"><option value="">全部</option><option value="1">有效案件</option><option value="0">無效</option></select>
+                        <select class="form-select" id="qStatus">
+                            <option value="">全部</option>
+                            <option value="1">有效案件</option>
+                            <option value="0">無效</option>
+                        </select>
                     </div>
-                    <div class="col-md-3 text-end"><button class="btn btn-primary" onclick="renderQueryTable()"><i class="fas fa-search"></i> 查詢</button></div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">車牌號碼</label>
+                        <input type="text" class="form-control" id="qPlate" placeholder="輸入關鍵字...">
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-primary w-100" onclick="renderQueryTable()"><i class="fas fa-search me-1"></i> 查詢</button>
+                    </div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 align-middle">
+                        <table class="table table-hover table-striped mb-0 align-middle text-center">
                             <thead class="table-light">
                                 <tr>
-                                    <th width="15%">辨識日期時間</th>
-                                    <th width="20%">設備 ID (SiteID)</th>
-                                    <th width="10%">辨識車牌</th>
-                                    <th width="12%">車頭照片</th>
-                                    <th width="12%">車斗照片</th>
-                                    <th width="12%">車尾照片</th>
-                                    <th width="8%">狀態</th>
-                                    <th width="11%">操作</th>
+                                    <th class="sortable" onclick="handleSort('query', 'time')">辨識時間 <i class="fas fa-sort sort-icon text-muted" id="sort-query-time"></i></th>
+                                    <th class="sortable text-start" onclick="handleSort('query', 'loc')">地點名稱 <i class="fas fa-sort sort-icon text-muted" id="sort-query-loc"></i></th>
+                                    <th class="sortable" onclick="handleSort('query', 'siteId')">監控點 <i class="fas fa-sort sort-icon text-muted" id="sort-query-siteId"></i></th>
+                                    <th class="sortable" onclick="handleSort('query', 'camId')">攝影機編號 <i class="fas fa-sort sort-icon text-muted" id="sort-query-camId"></i></th>
+                                    <th class="sortable" onclick="handleSort('query', 'plate')">辨識車牌 <i class="fas fa-sort sort-icon text-muted" id="sort-query-plate"></i></th>
+                                    <th>車頭照片</th>
+                                    <th>車斗照片</th>
+                                    <th>車尾照片</th>
+                                    <th class="sortable" onclick="handleSort('query', 'active')">狀態 <i class="fas fa-sort sort-icon text-muted" id="sort-query-active"></i></th>
+                                    <th>操作</th>
                                 </tr>
                             </thead>
                             <tbody id="queryTableBody"></tbody>
@@ -95,8 +122,38 @@
         <div class="tab-pane fade" id="adjust-content">
              <div class="card p-4">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-4"><label class="form-label fw-bold">發生時間</label><input type="date" class="form-control" id="aDate"></div>
-                    <div class="col-md-4 text-end"><button class="btn btn-primary" onclick="renderAdjustTable()"><i class="fas fa-filter"></i> 篩選</button></div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">拍攝時間區間</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="aDateStart">
+                            <span class="input-group-text">~</span>
+                            <input type="date" class="form-control" id="aDateEnd">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">點位/設備</label>
+                        <select class="form-select" id="aLocation">
+                            <option value="">所有地點</option>
+                            <option value="新屋區">台61北向入口(新屋區)</option>
+                            <option value="觀音區">台61南向入口(觀音區)</option>
+                            <option value="大園區">台61北向入口(大園區)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">狀態</label>
+                        <select class="form-select" id="aStatus">
+                            <option value="">全部</option>
+                            <option value="1">有效案件</option>
+                            <option value="0">無效</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">車牌號碼</label>
+                        <input type="text" class="form-control" id="aPlate" placeholder="輸入關鍵字...">
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-primary w-100" onclick="renderAdjustTable()"><i class="fas fa-search me-1"></i> 查詢</button>
+                    </div>
                 </div>
             </div>
 
@@ -107,12 +164,15 @@
                         <table class="table table-bordered mb-0 align-middle text-center">
                             <thead class="table-light">
                                 <tr>
-                                    <th width="15%">時間/設備ID</th>
-                                    <th width="15%">車頭照片</th>
-                                    <th width="15%">車斗照片</th>
-                                    <th width="15%">車尾照片</th>
-                                    <th width="25%">人工校正結果</th>
-                                    <th width="15%">功能</th>
+                                    <th class="sortable" onclick="handleSort('adjust', 'time')">時間 <i class="fas fa-sort sort-icon text-muted" id="sort-adjust-time"></i></th>
+                                    <th class="sortable text-start" onclick="handleSort('adjust', 'loc')">地點名稱 <i class="fas fa-sort sort-icon text-muted" id="sort-adjust-loc"></i></th>
+                                    <th class="sortable" onclick="handleSort('adjust', 'siteId')">監控點 <i class="fas fa-sort sort-icon text-muted" id="sort-adjust-siteId"></i></th>
+                                    <th class="sortable" onclick="handleSort('adjust', 'camId')">攝影機編號 <i class="fas fa-sort sort-icon text-muted" id="sort-adjust-camId"></i></th>
+                                    <th>車頭照片</th>
+                                    <th>車斗照片</th>
+                                    <th>車尾照片</th>
+                                    <th>人工校正結果</th>
+                                    <th>功能</th>
                                 </tr>
                             </thead>
                             <tbody id="adjustTableBody"></tbody>
@@ -141,51 +201,111 @@
     }
 
     let lprData = [
-        { 
-            id: 101, time: "2023-11-27 10:05:00", loc: "新屋區", siteId: "LOCA_68000_2026_0001", plate: "KER-5379", active: true, status: 1,
-            frontImg: "前截圖.jpg", bedImg: "車身照片.jpg", rearImg: "後截圖.jpg" 
-        },
-        { 
-            id: 102, time: "2023-11-27 09:15:10", loc: "觀音區", siteId: "LOCA_68000_2026_0002", plate: "XYZ-5678", active: true, status: 1,
-            frontImg: createMockImage("XYZ-5678", "車頭影像", "#333"), bedImg: createMockImage("XYZ-5678", "車斗影像", "#333"), rearImg: createMockImage("XYZ-5678", "車尾影像", "#333")
-        },
-        { 
-            id: 103, time: "2023-11-27 10:20:00", loc: "大園區", siteId: "LOCA_68000_2026_0003", plate: "無法辨識", active: true, status: 0, 
-            frontImg: createMockImage("無法辨識", "車頭過曝", "#dc3545"), bedImg: createMockImage("UNKNOWN", "車斗無特徵", "#dc3545"), rearImg: createMockImage("無法辨識", "無車尾牌", "#dc3545")
-        }
+        { id: 101, time: "2026-06-06 10:05:00", loc: "台61北向入口(新屋區)", siteId: "LOCA_68000_2026_0001", camId: "LOCA_68000_2026_0001_Front_01", plate: "KER-5379", active: true, status: 1, frontImg: "前截圖.jpg", bedImg: "車身照片.jpg", rearImg: "後截圖.jpg" },
+        { id: 102, time: "2026-06-05 09:15:10", loc: "台61南向入口(觀音區)", siteId: "LOCA_68000_2026_0002", camId: "LOCA_68000_2026_0002_Front_01", plate: "XYZ-5678", active: true, status: 1, frontImg: createMockImage("XYZ-5678", "車頭影像", "#333"), bedImg: createMockImage("XYZ-5678", "車斗影像", "#333"), rearImg: createMockImage("XYZ-5678", "車尾影像", "#333") },
+        { id: 103, time: "2026-06-04 10:20:00", loc: "台61北向入口(大園區)", siteId: "LOCA_68000_2026_0003", camId: "LOCA_68000_2026_0003_Front_01", plate: "無法辨識", active: true, status: 0, frontImg: createMockImage("無法辨識", "車頭過曝", "#dc3545"), bedImg: createMockImage("UNKNOWN", "車斗無特徵", "#dc3545"), rearImg: createMockImage("無法辨識", "無車尾牌", "#dc3545") },
+        { id: 104, time: "2026-06-06 11:30:00", loc: "台61南向入口(觀音區)", siteId: "LOCA_68000_2026_0002", camId: "LOCA_68000_2026_0002_Front_01", plate: "ABC-1234", active: true, status: 1, frontImg: createMockImage("ABC-1234", "車頭影像", "#333"), bedImg: createMockImage("ABC-1234", "車斗影像", "#333"), rearImg: createMockImage("ABC-1234", "車尾影像", "#333") },
+        { id: 105, time: "2026-06-05 14:20:00", loc: "台61北向入口(新屋區)", siteId: "LOCA_68000_2026_0001", camId: "LOCA_68000_2026_0001_Front_01", plate: "無法辨識", active: true, status: 0, frontImg: createMockImage("無法辨識", "模糊", "#dc3545"), bedImg: createMockImage("UNKNOWN", "無特徵", "#dc3545"), rearImg: createMockImage("無法辨識", "反光", "#dc3545") }
     ];
+
+    // 排序狀態物件
+    let sortConfig = {
+        query: { key: 'time', order: 'desc' },
+        adjust: { key: 'time', order: 'desc' }
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
         const today = new Date().toISOString().split('T')[0];
-        document.getElementById('qDateStart').value = today; document.getElementById('qDateEnd').value = today; document.getElementById('aDate').value = today;
-        renderQueryTable(); renderAdjustTable(); updateCount();
+        document.getElementById('qDateStart').value = today; 
+        document.getElementById('qDateEnd').value = today; 
+        document.getElementById('aDateStart').value = today;
+        document.getElementById('aDateEnd').value = today;
+        
+        updateSortIcons('query');
+        updateSortIcons('adjust');
+        renderQueryTable(); 
+        renderAdjustTable(); 
+        updateCount();
     });
 
     function updateCount() { document.getElementById('unrecognizedCount').innerText = lprData.filter(d => d.status === 0).length; }
+
+    // 處理排序邏輯
+    window.handleSort = function(tab, key) {
+        if (sortConfig[tab].key === key) {
+            sortConfig[tab].order = sortConfig[tab].order === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortConfig[tab].key = key;
+            sortConfig[tab].order = 'desc';
+        }
+        updateSortIcons(tab);
+        if (tab === 'query') renderQueryTable();
+        else renderAdjustTable();
+    }
+
+    // 更新排序圖示
+    function updateSortIcons(tab) {
+        document.querySelectorAll(`#${tab}-content .sort-icon`).forEach(icon => {
+            icon.className = 'fas fa-sort sort-icon text-muted';
+        });
+        const activeIcon = document.getElementById(`sort-${tab}-${sortConfig[tab].key}`);
+        if (activeIcon) {
+            activeIcon.className = sortConfig[tab].order === 'asc' ? 'fas fa-sort-up sort-icon text-primary' : 'fas fa-sort-down sort-icon text-primary';
+        }
+    }
+
+    // 資料排序共用函式
+    function sortDataArray(data, tab) {
+        const key = sortConfig[tab].key;
+        const order = sortConfig[tab].order;
+        return data.sort((a, b) => {
+            let valA = String(a[key] || '');
+            let valB = String(b[key] || '');
+            if (valA < valB) return order === 'asc' ? -1 : 1;
+            if (valA > valB) return order === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
 
     function renderQueryTable() {
         const tbody = document.getElementById('queryTableBody'); tbody.innerHTML = '';
         
         const locFilter = document.getElementById('qLocation').value;
         const statusFilter = document.getElementById('qStatus').value;
+        const plateFilter = document.getElementById('qPlate').value.trim().toLowerCase();
 
-        const filtered = lprData.filter(item => {
+        let filtered = lprData.filter(item => {
             const matchLoc = locFilter ? item.loc.includes(locFilter) : true;
             const matchStatus = statusFilter ? (statusFilter === '1' ? item.active : !item.active) : true; 
-            return matchLoc && matchStatus;
+            const matchPlate = plateFilter ? item.plate.toLowerCase().includes(plateFilter) : true;
+            return matchLoc && matchStatus && matchPlate;
         });
+
+        // 執行排序
+        filtered = sortDataArray(filtered, 'query');
+
+        if(filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-muted">查無符合條件的紀錄</td></tr>`;
+            return;
+        }
 
         filtered.forEach(item => {
             let plateBadge = item.plate === "無法辨識" ? `<span class="badge badge-recog-fail">無法辨識</span>` : `<span class="badge badge-recog-success">${item.plate}</span>`;
             const imgError = `onerror="this.parentNode.innerHTML='<span class=\\'text-danger small\\'>找不到圖檔</span>'"`;
+            
+            const timeParts = item.time.split(' ');
+            const displayTime = `${timeParts[0]}<br>${timeParts[1]}`;
+
             tbody.innerHTML += `
                 <tr>
-                    <td class="font-monospace small">${item.time}</td>
-                    <td class="font-monospace">${item.siteId}</td>
+                    <td class="font-monospace small">${displayTime}</td>
+                    <td class="text-start small">${item.loc}</td>
+                    <td class="font-monospace small">${item.siteId}</td>
+                    <td class="font-monospace small text-muted">${item.camId}</td>
                     <td class="font-monospace fs-6">${plateBadge}</td>
-                    <td><div class="img-thumbnail-custom" onclick="openImgModal('${item.frontImg}', '${item.plate} - 車頭')"><img src="${item.frontImg}" ${imgError}></div></td>
-                    <td><div class="img-thumbnail-custom" onclick="openImgModal('${item.bedImg}', '${item.plate} - 車斗')"><img src="${item.bedImg}" ${imgError}></div></td>
-                    <td><div class="img-thumbnail-custom" onclick="openImgModal('${item.rearImg}', '${item.plate} - 車尾')"><img src="${item.rearImg}" ${imgError}></div></td>
+                    <td><div class="img-thumbnail-custom mx-auto" onclick="openImgModal('${item.frontImg}', '${item.plate} - 車頭')"><img src="${item.frontImg}" ${imgError}></div></td>
+                    <td><div class="img-thumbnail-custom mx-auto" onclick="openImgModal('${item.bedImg}', '${item.plate} - 車斗')"><img src="${item.bedImg}" ${imgError}></div></td>
+                    <td><div class="img-thumbnail-custom mx-auto" onclick="openImgModal('${item.rearImg}', '${item.plate} - 車尾')"><img src="${item.rearImg}" ${imgError}></div></td>
                     <td>${item.active ? '<span class="text-success small">啟用</span>' : '<span class="text-secondary small">停用</span>'}</td>
                     <td><button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button></td>
                 </tr>
@@ -195,18 +315,43 @@
 
     function renderAdjustTable() {
         const tbody = document.getElementById('adjustTableBody'); tbody.innerHTML = '';
-        const filtered = lprData.filter(item => item.status === 0);
-        if (filtered.length === 0) return tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">無待處理案件</td></tr>';
+        
+        const locFilter = document.getElementById('aLocation').value;
+        const statusFilter = document.getElementById('aStatus').value;
+        const plateFilter = document.getElementById('aPlate').value.trim().toLowerCase();
+
+        let filtered = lprData.filter(item => {
+            const isUnrecognized = item.status === 0;
+            const matchLoc = locFilter ? item.loc.includes(locFilter) : true;
+            const matchStatus = statusFilter ? (statusFilter === '1' ? item.active : !item.active) : true; 
+            const matchPlate = plateFilter ? item.plate.toLowerCase().includes(plateFilter) : true;
+            return isUnrecognized && matchLoc && matchStatus && matchPlate;
+        });
+
+        // 執行排序
+        filtered = sortDataArray(filtered, 'adjust');
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">無待處理案件</td></tr>';
+            return;
+        }
         
         filtered.forEach(item => {
             const imgError = `onerror="this.parentNode.innerHTML='<span class=\\'text-danger small\\'>圖檔遺失</span>'"`;
+            
+            const timeParts = item.time.split(' ');
+            const displayTime = `${timeParts[0]}<br>${timeParts[1]}`;
+
             tbody.innerHTML += `
                 <tr>
-                    <td class="small text-start"><div class="fw-bold">${item.time}</div><div class="text-muted font-monospace">${item.siteId}</div></td>
+                    <td class="small font-monospace">${displayTime}</td>
+                    <td class="text-start small">${item.loc}</td>
+                    <td class="font-monospace small">${item.siteId}</td>
+                    <td class="font-monospace small text-muted">${item.camId}</td>
                     <td><div class="img-thumbnail-custom mx-auto" onclick="openImgModal('${item.frontImg}', '待校正 - 車頭')"><img src="${item.frontImg}" ${imgError}></div></td>
                     <td><div class="img-thumbnail-custom mx-auto" onclick="openImgModal('${item.bedImg}', '待校正 - 車斗')"><img src="${item.bedImg}" ${imgError}></div></td>
                     <td><div class="img-thumbnail-custom mx-auto" onclick="openImgModal('${item.rearImg}', '待校正 - 車尾')"><img src="${item.rearImg}" ${imgError}></div></td>
-                    <td><input type="text" class="form-control font-monospace fw-bold" id="input-${item.id}" placeholder="輸入正確車號" style="text-transform: uppercase;"></td>
+                    <td><input type="text" class="form-control font-monospace fw-bold mx-auto" id="input-${item.id}" placeholder="輸入正確車號" style="text-transform: uppercase; max-width: 150px;"></td>
                     <td><button class="btn btn-success w-100" onclick="submitCorrection(${item.id})">送出</button></td>
                 </tr>
             `;
